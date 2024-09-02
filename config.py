@@ -63,10 +63,25 @@ cl_history_size = 100
 
 test_seed = 0
 num_test_cases = 200
-test_env_settings = (
-                    (40, 4, 0.3), (40, 8, 0.3), 
-                    (40, 16, 0.3), 
-                    (40, 32, 0.3),
-                    (40, 64, 0.3),
-                    (80, 4, 0.3), (80, 8, 0.3), (80, 16, 0.3), (80, 32, 0.3), (80, 64, 0.3), (80, 128, 0.3),
-                    ) # map length, number of agents, density
+test_env_settings = [
+                    ('random32', 4),
+                    ('random32', 8),
+                    ('random32', 16),
+                    ('random32', 32),
+                    ('random32', 64),
+                    ('random64', 4),
+                    ('random64', 8),
+                    ('random64', 16),
+                    ('random64', 32),
+                    ('random64', 64),
+                    ('den312d', 4),
+                    ('den312d', 8),
+                    ('den312d', 16),
+                    ('den312d', 32),
+                    ('den312d', 64),
+                    ('warehouse', 4),
+                    ('warehouse', 8),
+                    ('warehouse', 16),
+                    ('warehouse', 32),
+                    ('warehouse', 64)
+                    ]

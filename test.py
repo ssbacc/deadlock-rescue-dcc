@@ -43,7 +43,7 @@ def create_test(test_env_settings: Tuple = config.test_env_settings, num_test_ca
 
 
 
-def test_model(model_range: Union[int, tuple], test_set: Tuple = config.test_env_settings):
+def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings):
     '''
     test model in 'saved_models' folder
     '''
@@ -63,8 +63,8 @@ def test_model(model_range: Union[int, tuple], test_set: Tuple = config.test_env
         print(f'----------test model {model_range}----------')
 
         for case in test_set:
-            print(f"test set: {case[0]} length {case[1]} agents {case[2]} density")
-            with open('./test_set/{}length_{}agents_{}density.pth'.format(case[0], case[1], case[2]), 'rb') as f:
+            print(f"test set: {case[0]} env {case[1]} agents")
+            with open('./test_set/{}_{}agents.pth'.format(case[0], case[1]), 'rb') as f:
                 tests = pickle.load(f)
 
             tests = [(test, network) for test in tests]
@@ -113,7 +113,7 @@ def test_one_case(args):
     env_set, network = args
 
     env = Environment()
-    env.load(env_set[0], env_set[1], env_set[2])
+    env.load(np.array(env_set[0]), np.array(env_set[1]), np.array(env_set[2]))
     obs, last_act, pos = env.observe()
     
     done = False
