@@ -124,7 +124,7 @@ def test_one_case(args):
     while not done and env.steps < config.max_episode_length:
         actions, _, _, _, comm_mask = network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(pos.astype(np.int)))
+                                                    torch.as_tensor(pos.astype(int)))
         (obs, last_act, pos), _, done, _ = env.step(actions)
         step += 1
         num_comm += np.sum(comm_mask)
@@ -141,7 +141,7 @@ def code_test():
     obs, last_act, pos = env.observe()
     network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(pos.astype(np.int)))
+                                                    torch.as_tensor(pos.astype(int)))
 
 if __name__ == '__main__':
 

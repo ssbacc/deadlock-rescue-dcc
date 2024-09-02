@@ -3,7 +3,7 @@ from typing import List, Union
 import numpy as np
 import config
 
-ACTION_LIST = np.array([[-1, 0],[1, 0],[0, -1],[0, 1], [0, 0]], dtype=np.int)
+ACTION_LIST = np.array([[-1, 0],[1, 0],[0, -1],[0, 1], [0, 0]], dtype=int)
     
 class Environment:
     def __init__(self, num_agents: int = config.init_env_settings[0], map_length: int = config.init_env_settings[1],
@@ -27,16 +27,16 @@ class Environment:
             self.fix_density = True
             self.obstacle_density = fix_density
 
-        self.map = np.random.choice(2, self.map_size, p=[1-self.obstacle_density, self.obstacle_density]).astype(np.int)
+        self.map = np.random.choice(2, self.map_size, p=[1-self.obstacle_density, self.obstacle_density]).astype(int)
         
         partition_list = self._map_partition()
 
         while len(partition_list) == 0:
-            self.map = np.random.choice(2, self.map_size, p=[1-self.obstacle_density, self.obstacle_density]).astype(np.int)
+            self.map = np.random.choice(2, self.map_size, p=[1-self.obstacle_density, self.obstacle_density]).astype(int)
             partition_list = self._map_partition()
         
-        self.agents_pos = np.empty((self.num_agents, 2), dtype=np.int)
-        self.goals_pos = np.empty((self.num_agents, 2), dtype=np.int)
+        self.agents_pos = np.empty((self.num_agents, 2), dtype=int)
+        self.goals_pos = np.empty((self.num_agents, 2), dtype=int)
 
         pos_num = sum([len(partition) for partition in partition_list])
         
@@ -54,11 +54,11 @@ class Environment:
 
             pos = random.choice(partition_list[partition_idx])
             partition_list[partition_idx].remove(pos)
-            self.agents_pos[i] = np.asarray(pos, dtype=np.int)
+            self.agents_pos[i] = np.asarray(pos, dtype=int)
 
             pos = random.choice(partition_list[partition_idx])
             partition_list[partition_idx].remove(pos)
-            self.goals_pos[i] = np.asarray(pos, dtype=np.int)
+            self.goals_pos[i] = np.asarray(pos, dtype=int)
 
             partition_list = [partition for partition in partition_list if len(partition) >= 2]
             pos_num = sum([len(partition) for partition in partition_list])
@@ -69,7 +69,7 @@ class Environment:
         self._get_heuri_map()
         self.steps = 0
 
-        self.last_actions = np.zeros((self.num_agents, 5), dtype=np.bool)
+        self.last_actions = np.zeros((self.num_agents, 5), dtype=bool)
 
     
     def update_env_settings_set(self, new_env_settings_set):
@@ -97,8 +97,8 @@ class Environment:
             self.map = np.random.choice(2, self.map_size, p=[1-self.obstacle_density, self.obstacle_density]).astype(np.float32)
             partition_list = self._map_partition()
         
-        self.agents_pos = np.empty((self.num_agents, 2), dtype=np.int)
-        self.goals_pos = np.empty((self.num_agents, 2), dtype=np.int)
+        self.agents_pos = np.empty((self.num_agents, 2), dtype=int)
+        self.goals_pos = np.empty((self.num_agents, 2), dtype=int)
 
         pos_num = sum([len(partition) for partition in partition_list])
         
@@ -115,11 +115,11 @@ class Environment:
 
             pos = random.choice(partition_list[partition_idx])
             partition_list[partition_idx].remove(pos)
-            self.agents_pos[i] = np.asarray(pos, dtype=np.int)
+            self.agents_pos[i] = np.asarray(pos, dtype=int)
 
             pos = random.choice(partition_list[partition_idx])
             partition_list[partition_idx].remove(pos)
-            self.goals_pos[i] = np.asarray(pos, dtype=np.int)
+            self.goals_pos[i] = np.asarray(pos, dtype=int)
 
             partition_list = [partition for partition in partition_list if len(partition) >= 2]
             pos_num = sum([len(partition) for partition in partition_list])
@@ -127,7 +127,7 @@ class Environment:
         self.steps = 0
         self._get_heuri_map()
 
-        self.last_actions = np.zeros((self.num_agents, 5), dtype=np.bool)
+        self.last_actions = np.zeros((self.num_agents, 5), dtype=bool)
 
         return self.observe()
 
@@ -144,10 +144,10 @@ class Environment:
 
         self._get_heuri_map()
 
-        self.last_actions = np.zeros((self.num_agents, 5), dtype=np.bool)
+        self.last_actions = np.zeros((self.num_agents, 5), dtype=bool)
 
     def _get_heuri_map(self):
-        dist_map = np.ones((self.num_agents, *self.map_size), dtype=np.int32) * np.iinfo(np.int32).max
+        dist_map = np.ones((self.num_agents, *self.map_size), dtype=int) * np.iinfo(int).max
 
         empty_pos = np.argwhere(self.map==0).tolist()
         empty_pos = set([tuple(pos) for pos in empty_pos])
@@ -182,7 +182,7 @@ class Environment:
                     dist_map[i, x, y+1] = dist+1
                     open_list.add(right)
         
-        self.heuri_map = np.zeros((self.num_agents, 4, *self.map_size), dtype=np.bool)
+        self.heuri_map = np.zeros((self.num_agents, 4, *self.map_size), dtype=bool)
 
         for x, y in empty_pos:
             for i in range(self.num_agents):
@@ -380,7 +380,7 @@ class Environment:
         assert np.unique(self.agents_pos, axis=0).shape[0] == self.num_agents
 
         # update last actions
-        self.last_actions = np.zeros((self.num_agents, 5), dtype=np.bool)
+        self.last_actions = np.zeros((self.num_agents, 5), dtype=bool)
         self.last_actions[np.arange(self.num_agents), np.array(actions)] = 1
 
         return self.observe(), rewards, done, info
@@ -400,11 +400,11 @@ class Environment:
         pos: current position of each agent, used for caculating communication mask
 
         '''
-        obs = np.zeros((self.num_agents, 6, 2*self.obs_radius+1, 2*self.obs_radius+1), dtype=np.bool)
+        obs = np.zeros((self.num_agents, 6, 2*self.obs_radius+1, 2*self.obs_radius+1), dtype=bool)
 
         obstacle_map = np.pad(self.map, self.obs_radius, 'constant', constant_values=0)
 
-        agent_map = np.zeros((self.map_size), dtype=np.bool)
+        agent_map = np.zeros((self.map_size), dtype=bool)
         agent_map[self.agents_pos[:,0], self.agents_pos[:,1]] = 1
         agent_map = np.pad(agent_map, self.obs_radius, 'constant', constant_values=0)
 
