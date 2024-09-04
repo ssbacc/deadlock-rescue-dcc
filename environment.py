@@ -1,9 +1,21 @@
 import random
 from typing import List, Union
 import numpy as np
+import matplotlib.pyplot as plt
+plt.ion()
+from matplotlib import colors
+import matplotlib
+matplotlib.use('Agg')
 import config
+import os
 
 ACTION_LIST = np.array([[-1, 0],[1, 0],[0, -1],[0, 1], [0, 0]], dtype=int)
+
+color_map = np.array([[255, 255, 255],   # white
+                    [190, 190, 190],   # gray
+                    [0, 191, 255],   # blue
+                    [255, 165, 0],   # orange
+                    [0, 250, 154]])  # green
     
 class Environment:
     def __init__(self, num_agents: int = config.init_env_settings[0], map_length: int = config.init_env_settings[1],
@@ -141,6 +153,8 @@ class Environment:
         self.map_size = (self.map.shape[0], self.map.shape[1])
         
         self.steps = 0
+
+        self.imgs = []
 
         self._get_heuri_map()
 
@@ -417,3 +431,87 @@ class Environment:
             obs[i, 2:] = self.heuri_map[i, :, x:x+2*self.obs_radius+1, y:y+2*self.obs_radius+1]
 
         return obs, np.copy(self.last_actions), np.copy(self.agents_pos)
+    
+
+    def save_frame(self, step, instance_id):
+        if not hasattr(self, 'fig'):
+            self.fig = plt.figure()
+
+        instance_dir = f'./pictures/{instance_id}'
+        if not os.path.exists(instance_dir):
+            os.makedirs(instance_dir)
+
+        map = np.copy(self.map)
+        for agent_id in range(self.num_agents):
+            if np.array_equal(self.agents_pos[agent_id], self.goals_pos[agent_id]):
+                map[tuple(self.agents_pos[agent_id])] = 4
+            else:
+                map[tuple(self.agents_pos[agent_id])] = 2
+                map[tuple(self.goals_pos[agent_id])] = 3
+
+        map = map.astype(np.uint8)
+        # plt.xlabel('step: {}'.format(self.steps))
+
+        # # add text in plot
+        # self.imgs.append([])
+        # if hasattr(self, 'texts'):
+        #     for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
+        #         self.texts[i].set_position((agent_y, agent_x))
+        #         self.texts[i].set_text(i)
+        # else:
+        #     self.texts = []
+        #     for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
+        #         text = plt.text(agent_y, agent_x, i, color='black', ha='center', va='center')
+        #         plt.text(goal_y, goal_x, i, color='black', ha='center', va='center')
+        #         self.texts.append(text)
+
+
+        plt.imshow(color_map[map], animated=True)
+        plt.axis('off')
+
+        frame_filename = f'{instance_dir}/frame_{step:04d}.png'
+
+        plt.savefig(frame_filename, bbox_inches='tight', pad_inches=0)
+        plt.close()
+
+
+    def render(self):
+        if not hasattr(self, 'fig'):
+            self.fig = plt.figure()
+
+        map = np.copy(self.map)
+        for agent_id in range(self.num_agents):
+            if np.array_equal(self.agents_pos[agent_id], self.goals_pos[agent_id]):
+                map[tuple(self.agents_pos[agent_id])] = 4
+            else:
+                map[tuple(self.agents_pos[agent_id])] = 2
+                map[tuple(self.goals_pos[agent_id])] = 3
+
+        map = map.astype(np.uint8)
+        # plt.xlabel('step: {}'.format(self.steps))
+
+        # add text in plot
+        self.imgs.append([])
+        if hasattr(self, 'texts'):
+            for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
+                self.texts[i].set_position((agent_y, agent_x))
+                self.texts[i].set_text(i)
+        else:
+            self.texts = []
+            for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
+                text = plt.text(agent_y, agent_x, i, color='black', ha='center', va='center')
+                plt.text(goal_y, goal_x, i, color='black', ha='center', va='center')
+                self.texts.append(text)
+
+
+        plt.imshow(color_map[map], animated=True)
+
+
+        plt.show()
+        # plt.ion()
+        plt.pause(0.5)
+
+
+    def close(self, save=False):
+        plt.close()
+        del self.fig

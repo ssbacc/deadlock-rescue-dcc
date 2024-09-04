@@ -62,21 +62,30 @@ def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings
         
         print(f'----------test model {model_range}----------')
 
+        instance_id = 0
+
         for case in test_set:
             print(f"test set: {case[0]} env {case[1]} agents")
             with open('./test_set/{}_{}agents.pth'.format(case[0], case[1]), 'rb') as f:
                 tests = pickle.load(f)
 
-            tests = [(test, network) for test in tests]
-            ret = pool.map(test_one_case, tests)
+            test = tests[0]
+            ret = test_one_case((test, network, instance_id))
 
-            success, steps, num_comm = zip(*ret)
+            success, steps, num_comm = ret
 
+            # instance_id_base = instance_id
+            # tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
+            # ret = pool.map(test_one_case, tests)
 
-            print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
-            print("average step: {}".format(sum(steps)/len(steps)))
-            print("communication times: {}".format(sum(num_comm)/len(num_comm)))
-            print()
+            # success, steps, num_comm = zip(*ret)
+
+            # print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
+            # print("average step: {}".format(sum(steps)/len(steps)))
+            # print("communication times: {}".format(sum(num_comm)/len(num_comm)))
+            # print()
+
+            instance_id += len(tests)
 
     elif isinstance(model_range, tuple):
 
@@ -89,28 +98,37 @@ def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings
 
             print(f'----------test model {model_name}----------')
 
+            instance_id = 0
+
             for case in test_set:
                 print(f"test set: {case[0]} length {case[1]} agents {case[2]} density")
                 with open(f'./test_set/{case[0]}length_{case[1]}agents_{case[2]}density.pth', 'rb') as f:
                     tests = pickle.load(f)
 
-                tests = [(test, network) for test in tests]
-                ret = pool.map(test_one_case, tests)
+                test = tests[0]
+                ret = test_one_case((test, network, instance_id))
 
+                success, steps, num_comm = ret
 
-                success, steps, num_comm = zip(*ret)
+                # instance_id_base = instance_id
+                # tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
+                # ret = pool.map(test_one_case, tests)
 
-                print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
-                print("average step: {}".format(sum(steps)/len(steps)))
-                print("communication times: {}".format(sum(num_comm)/len(num_comm)))
-                print()
+                # success, steps, num_comm = zip(*ret)
+
+                # print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
+                # print("average step: {}".format(sum(steps)/len(steps)))
+                # print("communication times: {}".format(sum(num_comm)/len(num_comm)))
+                # print()
+
+                instance_id += 1
 
             print('\n')
             
 
 def test_one_case(args):
 
-    env_set, network = args
+    env_set, network, instance_id = args
 
     env = Environment()
     env.load(np.array(env_set[0]), np.array(env_set[1]), np.array(env_set[2]))
@@ -126,6 +144,7 @@ def test_one_case(args):
                                                     torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(pos.astype(int)))
         (obs, last_act, pos), _, done, _ = env.step(actions)
+        env.save_frame(step, instance_id)
         step += 1
         num_comm += np.sum(comm_mask)
 
