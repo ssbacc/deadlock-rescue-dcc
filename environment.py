@@ -432,6 +432,21 @@ class Environment:
 
         return obs, np.copy(self.last_actions), np.copy(self.agents_pos)
     
+    def observe_agents(self):
+        obs = np.zeros((self.num_agents, 2*self.obs_radius+1, 2*self.obs_radius+1), dtype=int)
+        agent_map = np.zeros((self.map_size), dtype=int)
+        for i, agent_pos in enumerate(self.agents_pos):
+            agent_map[agent_pos[0], agent_pos[1]] = i + 1
+        agent_map = np.pad(agent_map, self.obs_radius, 'constant', constant_values=0)
+
+        for i, agent_pos in enumerate(self.agents_pos):
+            x, y = agent_pos
+
+            obs[i] = agent_map[x:x+2*self.obs_radius+1, y:y+2*self.obs_radius+1]
+            obs[i][self.obs_radius, self.obs_radius] = 0
+
+        return obs
+    
 
     def save_frame(self, step, instance_id):
         if not hasattr(self, 'fig'):
@@ -450,45 +465,9 @@ class Environment:
                 map[tuple(self.goals_pos[agent_id])] = 3
 
         map = map.astype(np.uint8)
-        # plt.xlabel('step: {}'.format(self.steps))
-
-        # # add text in plot
-        # self.imgs.append([])
-        # if hasattr(self, 'texts'):
-        #     for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
-        #         self.texts[i].set_position((agent_y, agent_x))
-        #         self.texts[i].set_text(i)
-        # else:
-        #     self.texts = []
-        #     for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
-        #         text = plt.text(agent_y, agent_x, i, color='black', ha='center', va='center')
-        #         plt.text(goal_y, goal_x, i, color='black', ha='center', va='center')
-        #         self.texts.append(text)
 
 
-        plt.imshow(color_map[map], animated=True)
-        plt.axis('off')
-
-        frame_filename = f'{instance_dir}/frame_{step:04d}.png'
-
-        plt.savefig(frame_filename, bbox_inches='tight', pad_inches=0)
-        plt.close()
-
-
-    def render(self):
-        if not hasattr(self, 'fig'):
-            self.fig = plt.figure()
-
-        map = np.copy(self.map)
-        for agent_id in range(self.num_agents):
-            if np.array_equal(self.agents_pos[agent_id], self.goals_pos[agent_id]):
-                map[tuple(self.agents_pos[agent_id])] = 4
-            else:
-                map[tuple(self.agents_pos[agent_id])] = 2
-                map[tuple(self.goals_pos[agent_id])] = 3
-
-        map = map.astype(np.uint8)
-        # plt.xlabel('step: {}'.format(self.steps))
+        plt.xlabel('step: {}'.format(self.steps))
 
         # add text in plot
         self.imgs.append([])
@@ -505,11 +484,49 @@ class Environment:
 
 
         plt.imshow(color_map[map], animated=True)
+        plt.axis('off')
+
+        frame_filename = f'{instance_dir}/frame_{step:04d}.png'
+
+        plt.savefig(frame_filename, bbox_inches='tight', pad_inches=0)
+        plt.close()
 
 
-        plt.show()
-        # plt.ion()
-        plt.pause(0.5)
+    # def render(self):
+    #     if not hasattr(self, 'fig'):
+    #         self.fig = plt.figure()
+
+    #     map = np.copy(self.map)
+    #     for agent_id in range(self.num_agents):
+    #         if np.array_equal(self.agents_pos[agent_id], self.goals_pos[agent_id]):
+    #             map[tuple(self.agents_pos[agent_id])] = 4
+    #         else:
+    #             map[tuple(self.agents_pos[agent_id])] = 2
+    #             map[tuple(self.goals_pos[agent_id])] = 3
+
+    #     map = map.astype(np.uint8)
+    #     # plt.xlabel('step: {}'.format(self.steps))
+
+    #     # add text in plot
+    #     self.imgs.append([])
+    #     if hasattr(self, 'texts'):
+    #         for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
+    #             self.texts[i].set_position((agent_y, agent_x))
+    #             self.texts[i].set_text(i)
+    #     else:
+    #         self.texts = []
+    #         for i, ((agent_x, agent_y), (goal_x, goal_y)) in enumerate(zip(self.agents_pos, self.goals_pos)):
+    #             text = plt.text(agent_y, agent_x, i, color='black', ha='center', va='center')
+    #             plt.text(goal_y, goal_x, i, color='black', ha='center', va='center')
+    #             self.texts.append(text)
+
+
+    #     plt.imshow(color_map[map], animated=True)
+
+
+    #     plt.show()
+    #     # plt.ion()
+    #     plt.pause(0.5)
 
 
     def close(self, save=False):
