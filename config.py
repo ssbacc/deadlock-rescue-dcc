@@ -78,7 +78,10 @@ num_test_cases = 200
 #                     ('den312d', 8),
 #                     ('den312d', 16),
 #                     ('den312d', 32),
-#                     ('den312d', 64),
+#                     ('den312d', 64)
+#                     ]
+
+# test_env_settings = [
 #                     ('warehouse', 4),
 #                     ('warehouse', 8),
 #                     ('warehouse', 16),
@@ -87,5 +90,5 @@ num_test_cases = 200
 #                     ]
 
 test_env_settings = [
-                    ('warehouse', 4)
+                    ('warehouse', 32)
                     ]

@@ -1,0 +1,99 @@
+test set: random32 env 4 agents
+success rate: 100.00%
+average step: 34.31
+communication times: 1.9366666666666668
+
+test set: random32 env 8 agents
+success rate: 100.00%
+average step: 38.56666666666667
+communication times: 7.87
+
+test set: random32 env 16 agents
+success rate: 100.00%
+average step: 44.553333333333335
+communication times: 33.89666666666667
+
+test set: random32 env 32 agents
+success rate: 99.33%
+average step: 53.836666666666666
+communication times: 145.56333333333333
+
+test set: random32 env 64 agents
+success rate: 95.67%
+average step: 86.16666666666667
+communication times: 744.51
+
+test set: random64 env 4 agents
+success rate: 100.00%
+average step: 69.89
+communication times: 0.7633333333333333
+
+test set: random64 env 8 agents
+success rate: 100.00%
+average step: 83.01666666666667
+communication times: 4.38
+
+test set: random64 env 16 agents
+success rate: 100.00%
+average step: 95.39666666666666
+communication times: 18.253333333333334
+
+test set: random64 env 32 agents
+success rate: 99.33%
+average step: 115.40666666666667
+communication times: 80.29333333333334
+
+test set: random64 env 64 agents
+success rate: 97.67%
+average step: 132.83
+communication times: 326.4533333333333
+
+test set: den312d env 4 agents
+success rate: 100.00%
+average step: 82.97
+communication times: 2.2733333333333334
+
+test set: den312d env 8 agents
+success rate: 100.00%
+average step: 96.50333333333333
+communication times: 11.55
+
+test set: den312d env 16 agents
+success rate: 99.67%
+average step: 109.10666666666667
+communication times: 52.43666666666667
+
+test set: den312d env 32 agents
+success rate: 99.67%
+average step: 122.11333333333333
+communication times: 220.52
+
+test set: den312d env 64 agents
+success rate: 94.67%
+average step: 164.99666666666667
+communication times: 1269.2466666666667
+
+test set: warehouse env 4 agents
+success rate: 100.00%
+average step: 135.28666666666666
+communication times: 3.3233333333333333
+
+test set: warehouse env 8 agents
+success rate: 98.67%
+average step: 166.36333333333334
+communication times: 18.2
+
+test set: warehouse env 16 agents
+success rate: 95.00%
+average step: 207.35
+communication times: 73.43
+
+test set: warehouse env 32 agents
+success rate: 88.33%
+average step: 287.89
+communication times: 300.2133333333333
+
+test set: warehouse env 64 agents
+success rate: 62.33%
+average step: 413.11
+communication times: 1140.0566666666666

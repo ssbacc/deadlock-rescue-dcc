@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 import os
 import random
 import pickle
@@ -24,10 +18,6 @@ import json
 
 os.environ["OPENAI_API_KEY"] = "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"
 client = OpenAI()
-
-
-# In[2]:
-
 
 # 함수들
 directiondict = {
@@ -352,8 +342,13 @@ def push_recursive_not_deadlock(obs, obs_agents, agent_idx, agent_action, agents
 def get_sorted_agents(agent_groups, env):
     super_agents = []
     for set_of_agents in agent_groups:
+        if not set_of_agents:
+            continue
         agent_super = max(set_of_agents, key=lambda i: np.sum(np.abs(env.agents_pos[i] - env.goals_pos[i])))
         super_agents.append(agent_super)
+
+    if not super_agents:
+        return []
 
     # 각 에이전트와 목표 사이의 거리 계산
     agent_distances = [(agent, np.sum(np.abs(env.agents_pos[agent] - env.goals_pos[agent]))) for agent in super_agents]
@@ -366,14 +361,11 @@ def get_sorted_agents(agent_groups, env):
     return sorted_agent_groups
 
 
-# In[3]:
-
-
 # 프롬프트
 class gpt4pathfinding:
     def detection(self, agents_state):
         response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are the manager called in to detect whether agents are deadlocked in a MAPF problem. You have the ability to infer what state each agent is in from their behavior."},
             {"role": "user", "content":
@@ -410,7 +402,7 @@ class gpt4pathfinding:
                 }}
 
                 There shouldn't be any duplicate agents in the results.
-                If the “deadlock” status is “no”, “solution” is not required.
+                If the "deadlock" status is "no", "solution" is not required.
                 
                 EXAMPLE:
                 [
@@ -430,8 +422,6 @@ class gpt4pathfinding:
 pathfinder = gpt4pathfinding()
 
 
-# In[4]:
-
 
 torch.manual_seed(config.test_seed)
 np.random.seed(config.test_seed)
@@ -439,8 +429,6 @@ random.seed(config.test_seed)
 DEVICE = torch.device('cpu')
 torch.set_num_threads(1)
 
-
-# In[5]:
 
 
 def create_test(test_env_settings: Tuple = config.test_env_settings, num_test_cases: int = config.num_test_cases):
@@ -466,8 +454,6 @@ def create_test(test_env_settings: Tuple = config.test_env_settings, num_test_ca
             pickle.dump(tests, f)
 
 
-# In[6]:
-
 
 def code_test():
     env = Environment()
@@ -477,9 +463,6 @@ def code_test():
     network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(pos.astype(int)))
-
-
-# In[7]:
 
 
 def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings):
@@ -544,28 +527,25 @@ def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings
                 with open(f'./test_set/{case[0]}length_{case[1]}agents_{case[2]}density.pth', 'rb') as f:
                     tests = pickle.load(f)
 
-                test = tests[0]
-                ret = test_one_case((test, network, instance_id))
+                # test = tests[0]
+                # ret = test_one_case((test, network, instance_id))
 
-                success, steps, num_comm = ret
+                # success, steps, num_comm = ret
 
-                # instance_id_base = instance_id
-                # tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
-                # ret = pool.map(test_one_case, tests)
+                instance_id_base = instance_id
+                tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
+                ret = pool.map(test_one_case, tests)
 
-                # success, steps, num_comm = zip(*ret)
+                success, steps, num_comm = zip(*ret)
 
-                # print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
-                # print("average step: {}".format(sum(steps)/len(steps)))
-                # print("communication times: {}".format(sum(num_comm)/len(num_comm)))
-                # print()
+                print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
+                print("average step: {}".format(sum(steps)/len(steps)))
+                print("communication times: {}".format(sum(num_comm)/len(num_comm)))
+                print()
 
                 instance_id += 1
 
             print('\n')
-
-
-# In[8]:
 
 
 def test_one_case(args):
@@ -644,7 +624,7 @@ def test_one_case(args):
             # print("JSON 부분을 찾을 수 없으므로 deadlock이 없다고 가정합니다.")
             json_data = []
 
-        deadlock_exists = any(item['deadlock'] == 'yes' for item in json_data)
+        deadlock_exists = any(item.get('deadlock') == 'yes' for item in json_data)
         
         if not deadlock_exists:
             for actions, comm_mask, _ in plan:
@@ -658,6 +638,11 @@ def test_one_case(args):
             prime_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'prime']
             radiation_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'radiation']
             no_deadlock_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'no']
+
+            prime_agents = [[agent for agent in group if agent < num_agents] for group in prime_agents]
+            radiation_agents = [[agent for agent in group if agent < num_agents] for group in radiation_agents]
+            no_deadlock_agents = [[agent for agent in group if agent < num_agents] for group in no_deadlock_agents]
+
             sorted_prime_agents = get_sorted_agents(prime_agents, env)
             sorted_no_deadlock_agents = get_sorted_agents(no_deadlock_agents, env)
 
@@ -686,6 +671,8 @@ def test_one_case(args):
                     for agent_idx in set_of_agents:
                         x_values.append(observation[2][agent_idx][0])
                         y_values.append(observation[2][agent_idx][1])
+                    if len(x_values) == 0 or len(y_values) == 0:
+                        continue
                     avg_x = sum(x_values) / len(x_values)
                     avg_y = sum(y_values) / len(y_values)
                     average_position = (avg_x, avg_y)
@@ -708,8 +695,9 @@ def test_one_case(args):
     return np.array_equal(env.agents_pos, env.goals_pos), step, num_comm
 
 
-# In[ ]:
 
+if __name__ == '__main__':
 
-test_model(128000)
+    # load trained model and reproduce results in paper
+    test_model(128000)
 
