@@ -383,11 +383,6 @@ class gpt4pathfinding:
 
                 If deadlocked agents are within a distance of approximately 5 units from each other in coordinates, they are likely to be entangled, so group them together.
 
-                Below are guides to deriving a solution for each deadlock:
-                - Use the "prime" method if the agent is independently deadlocked. If the agents is independently deadlocked, the “radiation” method is not possible.
-                - If there are entangled agents and one of them has a goal that is more than 8 units away from its current position, use the "prime" method. Even if the agents are close to each other, if simplifying the problem by moving an agent with a distant goal is possible, use the "prime" method.
-                - Use the "radiation" method for deadlocks where all grouped agents have goals that are close to their current location.
-
                 Below are 32 action logs of agents.
 
                 {agents_state}
@@ -398,7 +393,6 @@ class gpt4pathfinding:
                 {{
                     "agent_id": [Agent IDs in the same group],
                     "deadlock": "yes" or "no"
-                    "solution": "prime" or "radiation"
                 }}
 
                 There shouldn't be any duplicate agents in the results.
@@ -406,10 +400,10 @@ class gpt4pathfinding:
                 
                 EXAMPLE:
                 [
-                    {{"agent_id": [1, 24, 32], "deadlock": "yes", "solution": "prime"}},
-                    {{"agent_id": [30], "deadlock": "yes", "solution": "prime"}},
-                    {{"agent_id": [4, 5], "deadlock": "yes", "solution": "radiation"}},
-                    {{"agent_id": [16], "deadlock": "no"}}
+                    {{"agent_id": [1, 24, 32], "deadlock": "yes"}},
+                    {{"agent_id": [30], "deadlock": "yes"}},
+                    {{"agent_id": [4, 5], "deadlock": "yes"}},
+                    {{"agent_id": [16], "deadlock": "no"}},
                     {{"agent_id": [20], "deadlock": "no"}}
                 ]
 
