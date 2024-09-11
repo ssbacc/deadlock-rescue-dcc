@@ -90,5 +90,5 @@ num_test_cases = 200
 #                     ]
 
 test_env_settings = [
-                    ('warehouse', 32)
+                    ('warehouse', 64)
                     ]
