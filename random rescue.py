@@ -371,7 +371,7 @@ class gpt4pathfinding:
             {"role": "user", "content":
                 f"""
                 You have 32 action logs of agents to detect whether they are deadlocked.
-                You group the deadlocked agents that are likely to be related to each other and provide a solution for each deadlock.
+                You group the deadlocked agents that are likely to be related to each other.
                 
                 The following conditions are categorized as deadlocks:
                 - No further movement while in the "Not arrived" state.
@@ -396,7 +396,6 @@ class gpt4pathfinding:
                 }}
 
                 There shouldn't be any duplicate agents in the results.
-                If the "deadlock" status is "no", "solution" is not required.
                 
                 EXAMPLE:
                 [
@@ -629,16 +628,13 @@ def test_one_case(args):
                 step += 1
                 num_comm += np.sum(comm_mask)
         else:
-            prime_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'prime']
-            radiation_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'radiation']
+            radiation_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes']
             no_deadlock_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'no']
 
-            prime_agents = [[agent for agent in group if agent < num_agents] for group in prime_agents]
-            radiation_agents = [[agent for agent in group if agent < num_agents] for group in radiation_agents]
-            no_deadlock_agents = [[agent for agent in group if agent < num_agents] for group in no_deadlock_agents]
-
-            sorted_prime_agents = get_sorted_agents(prime_agents, env)
             sorted_no_deadlock_agents = get_sorted_agents(no_deadlock_agents, env)
+
+            sorted_no_deadlock_agents = [agent for agent in sorted_no_deadlock_agents if 0 <= agent < num_agents]
+            radiation_agents = [[agent for agent in sublist if 0 <= agent < num_agents] for sublist in radiation_agents]
 
             for _ in range(16):
                 if env.steps >= config.max_episode_length:
@@ -652,10 +648,6 @@ def test_one_case(args):
                                                     torch.as_tensor(pos.astype(int)))
                 
                 fixed_agents = []
-                for super_agent in sorted_prime_agents:
-                    for relayed_action in push_recursive(observation, obs_agents, super_agent, fixed_agents):
-                        manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
-                        fixed_agents.append(relayed_action[0])
 
                 random.shuffle(radiation_agents)
                 for set_of_agents in radiation_agents:
