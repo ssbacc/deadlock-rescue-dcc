@@ -12,10 +12,11 @@ from environment import Environment
 from model import Network
 import config
 import copy
-import ollama
 from openai import OpenAI
 import json
 
+detection_interval = 32
+resolution_interval = 16
 os.environ["OPENAI_API_KEY"] = "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"
 client = OpenAI()
 
@@ -370,12 +371,12 @@ class gpt4pathfinding:
             {"role": "system", "content": "You are the manager called in to detect whether agents are deadlocked in a MAPF problem. You have the ability to infer what state each agent is in from their behavior."},
             {"role": "user", "content":
                 f"""
-                You have 32 action logs of agents to detect whether they are deadlocked.
+                You have {detection_interval} action logs of agents to detect whether they are deadlocked.
                 You group the deadlocked agents that are likely to be related to each other and provide a solution for each deadlock.
                 
                 The following conditions are categorized as deadlocks:
                 - No further movement while in the "Not arrived" state.
-                - Wandering around with no meaningful change in coordinates after 32 behaviors while in the "Not arrived" state.
+                - Wandering around with no meaningful change in coordinates after {detection_interval} behaviors while in the "Not arrived" state.
 
                 The following conditions are NOT categorized as deadlocks:
                 - Being in the "Not arrived" state but transitioning to the "Arrived" state at a certain point and remaining stationary afterward.
@@ -388,7 +389,7 @@ class gpt4pathfinding:
                 - If there are entangled agents and one of them has a goal that is more than 8 units away from its current position, use the "prime" method. Even if the agents are close to each other, if simplifying the problem by moving an agent with a distant goal is possible, use the "prime" method.
                 - Use the "radiation" method for deadlocks where all grouped agents have goals that are close to their current location.
 
-                Below are 32 action logs of agents.
+                Below are {detection_interval} action logs of agents.
 
                 {agents_state}
 
@@ -578,7 +579,7 @@ def test_one_case(args):
         plan = []
         not_arrived = set()
         sim_obs, sim_last_act, sim_pos = env_copy.observe()
-        for _ in range(32):
+        for _ in range(detection_interval):
             if env_copy.steps >= config.max_episode_length:
                 break
             actions, _, _, _, comm_mask = network.step(torch.as_tensor(sim_obs.astype(np.float32)).to(DEVICE), 
@@ -646,7 +647,7 @@ def test_one_case(args):
             sorted_prime_agents = get_sorted_agents(prime_agents, env)
             sorted_no_deadlock_agents = get_sorted_agents(no_deadlock_agents, env)
 
-            for _ in range(16):
+            for _ in range(resolution_interval):
                 if env.steps >= config.max_episode_length:
                     break
                 obs_agents = env.observe_agents()
