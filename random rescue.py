@@ -365,7 +365,7 @@ def get_sorted_agents(agent_groups, env):
 class gpt4pathfinding:
     def detection(self, agents_state):
         response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are the manager called in to detect whether agents are deadlocked in a MAPF problem. You have the ability to infer what state each agent is in from their behavior."},
             {"role": "user", "content":

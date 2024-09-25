@@ -26,7 +26,7 @@ batch_size = 128
 learning_starts = 50000
 target_network_update_freq = 1750
 save_path='./saved_models'
-max_episode_length = 512
+max_episode_length = 256
 buffer_capacity = 262144
 chunk_capacity = 64
 burn_in_steps = 20
@@ -63,23 +63,23 @@ cl_history_size = 100
 
 test_seed = 0
 num_test_cases = 200
-# test_env_settings = [
-#                     ('random32', 4),
-#                     ('random32', 8),
-#                     ('random32', 16),
-#                     ('random32', 32),
-#                     ('random32', 64),
-#                     ('random64', 4),
-#                     ('random64', 8),
-#                     ('random64', 16),
-#                     ('random64', 32),
-#                     ('random64', 64),
-#                     ('den312d', 4),
-#                     ('den312d', 8),
-#                     ('den312d', 16),
-#                     ('den312d', 32),
-#                     ('den312d', 64)
-#                     ]
+test_env_settings = [
+                    # ('random32', 4),
+                    # ('random32', 8),
+                    # ('random32', 16),
+                    # ('random32', 32),
+                    # ('random32', 64),
+                    # ('random64', 4),
+                    #('random64', 8),
+                    # ('random64', 16),
+                    # ('random64', 32),
+                    ('random64', 64),
+                    # ('den312d', 4),
+                    # ('den312d', 8),
+                    # ('den312d', 16),
+                    # ('den312d', 32),
+                    # ('den312d', 64)
+                    ]
 
 # test_env_settings = [
 #                     ('warehouse', 4),
@@ -89,6 +89,6 @@ num_test_cases = 200
 #                     ('warehouse', 64)
 #                     ]
 
-test_env_settings = [
-                    ('warehouse', 64)
-                    ]
+# test_env_settings = [
+#                     ('warehouse', 64)
+#                     ]
