@@ -368,47 +368,47 @@ class gpt4pathfinding:
         response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are the manager called in to detect whether agents are deadlocked in a MAPF problem. You have the ability to infer what state each agent is in from their behavior."},
+            {"role": "system", "content": "You are the manager responsible for detecting whether agents are deadlocked in a MAPF problem. You can infer each agent's state based on their behavior."},
             {"role": "user", "content":
                 f"""
-                You have {detection_interval} action logs of agents to detect whether they are deadlocked.
-                You group the deadlocked agents that are likely to be related to each other and provide a solution for each deadlock.
+                You are given {detection_interval} action logs of agents to detect deadlocks.
+                Group deadlocked agents that are likely related and provide a solution for each group.
                 
-                The following conditions are categorized as deadlocks:
-                - No further movement while in the "Not arrived" state.
-                - Wandering around with no meaningful change in coordinates after {detection_interval} behaviors while in the "Not arrived" state.
+                Deadlock conditions:
+                - No movement while in the "Not arrived" state.
+                - Wandering behavior with no meaningful coordinate change during {detection_interval} behaviors in the "Not arrived" state.
 
-                The following conditions are NOT categorized as deadlocks:
-                - Being in the "Not arrived" state but transitioning to the "Arrived" state at a certain point and remaining stationary afterward.
-                - Remaining in the "Not arrived" state but showing consistent changes in coordinates while moving.
+                Not considered deadlocks:
+                - Transition from "Not arrived" to "Arrived" and remaining stationary.
+                - Remaining in the "Not arrived" state but showing consistent coordinate changes.
 
-                If deadlocked agents are within a distance of approximately 5 units from each other in coordinates, they are likely to be entangled, so group them together.
+                Agents in a deadlock and within a Manhattan distance of 5 units are likely related and should be grouped.
 
-                Below are guides to deriving a solution for each deadlock:
-                - Use the "prime" method if the agent is independently deadlocked. If the agents is independently deadlocked, the “radiation” method is not possible.
-                - If there are entangled agents and one of them has a goal that is more than 8 units away from its current position, use the "prime" method. Even if the agents are close to each other, if simplifying the problem by moving an agent with a distant goal is possible, use the "prime" method.
-                - Use the "radiation" method for deadlocks where all grouped agents have goals that are close to their current location.
+                Solutions for deadlocks:
+                - Use "leader" method if the agent is independently deadlocked.
+                - If any agent in the group has a goal more than 8 units away in Manhattan distance, use "leader" method.
+                - Use "radiation" method for deadlocks where neither of the previous two conditions apply.
 
-                Below are {detection_interval} action logs of agents.
+                Below are the {detection_interval} action logs of agents.
 
                 {agents_state}
 
-                Under no circumstances generate a description or explanation; only return the result in JSON format exactly as shown below.
+                Do not generate a description or explanation; return the result only in the JSON format below.
 
-                Return the status of each agent in JSON format. The status of each agent should follow this format:
+                Provide the agent group status in this format:
                 {{
                     "agent_id": [Agent IDs in the same group],
                     "deadlock": "yes" or "no"
-                    "solution": "prime" or "radiation"
+                    "solution": "leader" or "radiation"
                 }}
 
-                There shouldn't be any duplicate agents in the results.
+                There should be no duplicate agents in the results.
                 If the "deadlock" status is "no", "solution" is not required.
                 
                 EXAMPLE:
                 [
-                    {{"agent_id": [1, 24, 32], "deadlock": "yes", "solution": "prime"}},
-                    {{"agent_id": [30], "deadlock": "yes", "solution": "prime"}},
+                    {{"agent_id": [1, 24, 32], "deadlock": "yes", "solution": "leader"}},
+                    {{"agent_id": [30], "deadlock": "yes", "solution": "leader"}},
                     {{"agent_id": [4, 5], "deadlock": "yes", "solution": "radiation"}},
                     {{"agent_id": [16], "deadlock": "no"}},
                     {{"agent_id": [20], "deadlock": "no"}}
@@ -636,15 +636,15 @@ def test_one_case(args):
                 step += 1
                 num_comm += np.sum(comm_mask)
         else:
-            prime_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'prime']
+            leader_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'leader']
             radiation_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'radiation']
             no_deadlock_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'no']
 
-            prime_agents = [[agent for agent in group if agent < num_agents] for group in prime_agents]
+            leader_agents = [[agent for agent in group if agent < num_agents] for group in leader_agents]
             radiation_agents = [[agent for agent in group if agent < num_agents] for group in radiation_agents]
             no_deadlock_agents = [[agent for agent in group if agent < num_agents] for group in no_deadlock_agents]
 
-            sorted_prime_agents = get_sorted_agents(prime_agents, env)
+            sorted_leader_agents = get_sorted_agents(leader_agents, env)
             sorted_no_deadlock_agents = get_sorted_agents(no_deadlock_agents, env)
 
             for _ in range(resolution_interval):
@@ -659,7 +659,7 @@ def test_one_case(args):
                                                     torch.as_tensor(pos.astype(int)))
                 
                 fixed_agents = []
-                for super_agent in sorted_prime_agents:
+                for super_agent in sorted_leader_agents:
                     for relayed_action in push_recursive(observation, obs_agents, super_agent, fixed_agents):
                         manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
                         fixed_agents.append(relayed_action[0])
