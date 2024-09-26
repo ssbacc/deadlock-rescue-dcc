@@ -1,0 +1,38 @@
+Env: warehouse 64
+Model: gpt-4o
+
+detection_interval 32, resolution_interval 16
+success rate: 70.00%
+average step: 392.24
+communication times: 1025.86
+
+detection_interval 16, resolution_interval 16
+success rate: 72.00%
+average step: 392.56
+communication times: 1019.98
+
+detection_interval 8, resolution_interval 16
+success rate: 72.00%
+average step: 374.32
+communication times: 1010.02
+
+detection_interval 4, resolution_interval 16
+success rate: 70.00%
+average step: 382.32
+communication times: 1011.48
+Total experiment time: 268.50 seconds
+
+Env: random64 64
+Model: gpt-4o
+
+detection_interval 32, resolution_interval 16
+success rate: 98.00%
+average step: 133.72
+communication times: 322.58
+Total experiment time: 72.21 seconds
+
+detection_interval 4, resolution_interval 16
+success rate: 100.00%
+average step: 130.68
+communication times: 322.16
+Total experiment time: 70.48 seconds
