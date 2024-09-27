@@ -1,0 +1,87 @@
+grid_map:
+    FREE_SPACE: 0
+    OBSTACLE: 1
+
+map_files:
+    # random32: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\random-32-32-10.map"
+    # random64: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\random-64-64-10.map"
+    # den312d: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\den312d.map"
+    # warehouse: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\warehouse-10-20-10-2-1.map"
+    random32-d: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\random-32-32-20.map"
+    random64-d: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\random-64-64-20.map"
+    warehouse-w: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\warehouse-20-40-10-2-1.map"
+    maze-n: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\maze-128-128-1.map"
+    maze-w: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\maze-128-128-2.map"
+    gallowstemplar: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\lt_gallowstemplar_n.map"
+    Berlin: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\Berlin_1_256.map"
+    Paris: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\Paris_1_256.map"
+    Boston: "C:\\Users\\Owner\\SACHA\\benchmarks\\maps\\Boston_0_256.map"
+
+
+
+test_env_settings:
+    # - ['random32', 4]
+    # - ['random32', 8]
+    # - ['random32', 16]
+    # - ['random32', 32]
+    # - ['random32', 64]
+    # - ['random64', 4]
+    # - ['random64', 8]
+    # - ['random64', 16]
+    # - ['random64', 32]
+    # - ['random64', 64]
+    # - ['den312d', 4]
+    # - ['den312d', 8]
+    # - ['den312d', 16]
+    # - ['den312d', 32]
+    # - ['den312d', 64]
+    # - ['warehouse', 4]
+    # - ['warehouse', 8]
+    # - ['warehouse', 16]
+    # - ['warehouse', 32]
+    # - ['warehouse', 64]
+    - ['random32-d', 4]
+    - ['random32-d', 8]
+    - ['random32-d', 16]
+    - ['random32-d', 32]
+    - ['random32-d', 64]
+    - ['random64-d', 4]
+    - ['random64-d', 8]
+    - ['random64-d', 16]
+    - ['random64-d', 32]
+    - ['random64-d', 64]
+    - ['warehouse-w', 4]
+    - ['warehouse-w', 8]
+    - ['warehouse-w', 16]
+    - ['warehouse-w', 32]
+    - ['warehouse-w', 64]
+    - ['maze-n', 4]
+    - ['maze-n', 8]
+    - ['maze-n', 16]
+    - ['maze-n', 32]
+    - ['maze-n', 64]
+    - ['maze-w', 4]
+    - ['maze-w', 8]
+    - ['maze-w', 16]
+    - ['maze-w', 32]
+    - ['maze-w', 64]
+    - ['gallowstemplar', 4]
+    - ['gallowstemplar', 8]
+    - ['gallowstemplar', 16]
+    - ['gallowstemplar', 32]
+    - ['gallowstemplar', 64]
+    - ['Berlin', 4]
+    - ['Berlin', 8]
+    - ['Berlin', 16]
+    - ['Berlin', 32]
+    - ['Berlin', 64]
+    - ['Paris', 4]
+    - ['Paris', 8]
+    - ['Paris', 16]
+    - ['Paris', 32]
+    - ['Paris', 64]
+    - ['Boston', 4]
+    - ['Boston', 8]
+    - ['Boston', 16]
+    - ['Boston', 32]
+    - ['Boston', 64]
