@@ -566,15 +566,6 @@ def test_one_case(args):
     step = 0
     num_comm = 0
 
-    while not done and env.steps < config.max_episode_length // 2:
-        actions, _, _, _, comm_mask = network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(pos.astype(int)))
-        (obs, last_act, pos), _, done, _ = env.step(actions)
-        # env.save_frame(step, instance_id)
-        step += 1
-        num_comm += np.sum(comm_mask)
-
     while not done and env.steps < config.max_episode_length:
         env_copy = copy.deepcopy(env)
         plan = []
