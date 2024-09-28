@@ -14,9 +14,8 @@ import config
 import copy
 from openai import OpenAI
 import json
-import time
 
-detection_interval = 8
+detection_interval = 32
 resolution_interval = 16
 os.environ["OPENAI_API_KEY"] = "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"
 client = OpenAI()
@@ -566,7 +565,7 @@ def test_one_case(args):
     step = 0
     num_comm = 0
 
-    while not done and env.steps < config.max_episode_length // 2:
+    while not done and env.steps < config.max_episode_length:
         actions, _, _, _, comm_mask = network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(pos.astype(int)))
@@ -575,128 +574,124 @@ def test_one_case(args):
         step += 1
         num_comm += np.sum(comm_mask)
 
-    while not done and env.steps < config.max_episode_length:
-        env_copy = copy.deepcopy(env)
-        plan = []
-        not_arrived = set()
-        sim_obs, sim_last_act, sim_pos = env_copy.observe()
-        for _ in range(detection_interval):
-            if env_copy.steps >= config.max_episode_length:
-                break
-            actions, _, _, _, comm_mask = network.step(torch.as_tensor(sim_obs.astype(np.float32)).to(DEVICE), 
-                                                        torch.as_tensor(sim_last_act.astype(np.float32)).to(DEVICE), 
-                                                        torch.as_tensor(sim_pos.astype(int)))
-            plan.append((actions, comm_mask, copy.deepcopy(sim_pos)))
-            (sim_obs, sim_last_act, sim_pos), _, sim_done, _ = env_copy.step(actions)
-            for i in range(num_agents):
-                if not np.array_equal(env_copy.agents_pos[i], env_copy.goals_pos[i]):
-                    not_arrived.add(i)
-        planned_steps_dict = {i: [] for i in not_arrived}
-        goal_logged = {i: False for i in not_arrived}
-        for i in plan:
-            actions, _, positions = i
-            for agent_idx in not_arrived:
-                position = positions[agent_idx]
-                # 목표 위치와 현재 위치를 비교하여 도달 여부 판단
-                arrived_status = "Arrived" if np.array_equal(position, env.goals_pos[agent_idx]) else "Not arrived"
-                direction = reverse_directiondict.get(actions[agent_idx], 'unknown')
-                if not goal_logged[agent_idx]:
-                    planned_steps_dict[agent_idx].append(
-                        f"(Action: {direction}, Position: [{position[0]}, {position[1]}], {arrived_status})"
-                    )
-                    goal_logged[agent_idx] = True
-                else:
-                    planned_steps_dict[agent_idx].append(
-                        f"(Action: {direction}, Position: [{position[0]}, {position[1]}], {arrived_status})"
-                    )
-        agents_state = ""
-        for agent_idx in planned_steps_dict:
-            agent_goal = f" (Goal: [{env.goals_pos[agent_idx][0]}, {env.goals_pos[agent_idx][1]}])"
-            agent_log = ", ".join(planned_steps_dict[agent_idx])
-            agents_state += f"Agent {agent_idx}{agent_goal}: {agent_log}\n"
-        gpt4_response = pathfinder.detection(agents_state)
-        response_text = gpt4_response
-        try:
-            start_idx = response_text.index('[')
-            end_idx = response_text.rindex(']') + 1
-            json_part = response_text[start_idx:end_idx]
-            json_data = json.loads(json_part)
-            # print("Extracted JSON:", json_data)
-        except:
-            # print("JSON 부분을 찾을 수 없으므로 deadlock이 없다고 가정합니다.")
-            json_data = []
+    # while not done and env.steps < config.max_episode_length:
+    #     env_copy = copy.deepcopy(env)
+    #     plan = []
+    #     not_arrived = set()
+    #     sim_obs, sim_last_act, sim_pos = env_copy.observe()
+    #     for _ in range(detection_interval):
+    #         if env_copy.steps >= config.max_episode_length:
+    #             break
+    #         actions, _, _, _, comm_mask = network.step(torch.as_tensor(sim_obs.astype(np.float32)).to(DEVICE), 
+    #                                                     torch.as_tensor(sim_last_act.astype(np.float32)).to(DEVICE), 
+    #                                                     torch.as_tensor(sim_pos.astype(int)))
+    #         plan.append((actions, comm_mask, copy.deepcopy(sim_pos)))
+    #         (sim_obs, sim_last_act, sim_pos), _, sim_done, _ = env_copy.step(actions)
+    #         for i in range(num_agents):
+    #             if not np.array_equal(env_copy.agents_pos[i], env_copy.goals_pos[i]):
+    #                 not_arrived.add(i)
+    #     planned_steps_dict = {i: [] for i in not_arrived}
+    #     goal_logged = {i: False for i in not_arrived}
+    #     for i in plan:
+    #         actions, _, positions = i
+    #         for agent_idx in not_arrived:
+    #             position = positions[agent_idx]
+    #             # 목표 위치와 현재 위치를 비교하여 도달 여부 판단
+    #             arrived_status = "Arrived" if np.array_equal(position, env.goals_pos[agent_idx]) else "Not arrived"
+    #             direction = reverse_directiondict.get(actions[agent_idx], 'unknown')
+    #             if not goal_logged[agent_idx]:
+    #                 planned_steps_dict[agent_idx].append(
+    #                     f"(Action: {direction}, Position: [{position[0]}, {position[1]}], {arrived_status})"
+    #                 )
+    #                 goal_logged[agent_idx] = True
+    #             else:
+    #                 planned_steps_dict[agent_idx].append(
+    #                     f"(Action: {direction}, Position: [{position[0]}, {position[1]}], {arrived_status})"
+    #                 )
+    #     agents_state = ""
+    #     for agent_idx in planned_steps_dict:
+    #         agent_goal = f" (Goal: [{env.goals_pos[agent_idx][0]}, {env.goals_pos[agent_idx][1]}])"
+    #         agent_log = ", ".join(planned_steps_dict[agent_idx])
+    #         agents_state += f"Agent {agent_idx}{agent_goal}: {agent_log}\n"
+    #     gpt4_response = pathfinder.detection(agents_state)
+    #     response_text = gpt4_response
+    #     try:
+    #         start_idx = response_text.index('[')
+    #         end_idx = response_text.rindex(']') + 1
+    #         json_part = response_text[start_idx:end_idx]
+    #         json_data = json.loads(json_part)
+    #         # print("Extracted JSON:", json_data)
+    #     except:
+    #         # print("JSON 부분을 찾을 수 없으므로 deadlock이 없다고 가정합니다.")
+    #         json_data = []
 
-        print(json_data)
-
-        deadlock_exists = any(item.get('deadlock') == 'yes' for item in json_data)
+    #     deadlock_exists = any(item.get('deadlock') == 'yes' for item in json_data)
         
-        if not deadlock_exists:
-            for actions, comm_mask, _ in plan:
-                if env.steps >= config.max_episode_length:
-                    break
-                (obs, last_act, pos), _, done, _ = env.step(actions)
-                # env.save_frame(step, instance_id)
-                step += 1
-                num_comm += np.sum(comm_mask)
-        else:
-            leader_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'leader']
-            radiation_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'radiation']
-            no_deadlock_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'no']
+    #     if not deadlock_exists:
+    #         for actions, comm_mask, _ in plan:
+    #             if env.steps >= config.max_episode_length:
+    #                 break
+    #             (obs, last_act, pos), _, done, _ = env.step(actions)
+    #             # env.save_frame(step, instance_id)
+    #             step += 1
+    #             num_comm += np.sum(comm_mask)
+    #     else:
+    #         leader_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'leader']
+    #         radiation_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes' and item.get('solution') == 'radiation']
+    #         no_deadlock_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'no']
 
-            leader_agents = [[agent for agent in group if agent < num_agents] for group in leader_agents]
-            radiation_agents = [[agent for agent in group if agent < num_agents] for group in radiation_agents]
-            no_deadlock_agents = [[agent for agent in group if agent < num_agents] for group in no_deadlock_agents]
+    #         leader_agents = [[agent for agent in group if agent < num_agents] for group in leader_agents]
+    #         radiation_agents = [[agent for agent in group if agent < num_agents] for group in radiation_agents]
+    #         no_deadlock_agents = [[agent for agent in group if agent < num_agents] for group in no_deadlock_agents]
 
-            sorted_leader_agents = get_sorted_agents(leader_agents, env)
-            sorted_no_deadlock_agents = get_sorted_agents(no_deadlock_agents, env)
+    #         sorted_leader_agents = get_sorted_agents(leader_agents, env)
+    #         sorted_no_deadlock_agents = get_sorted_agents(no_deadlock_agents, env)
 
-            for _ in range(resolution_interval):
-                if env.steps >= config.max_episode_length:
-                    break
-                obs_agents = env.observe_agents()
-                observation = env.observe()
+    #         for _ in range(resolution_interval):
+    #             if env.steps >= config.max_episode_length:
+    #                 break
+    #             obs_agents = env.observe_agents()
+    #             observation = env.observe()
 
-                manual_actions = [4 for _ in range(num_agents)]
-                ml_planned_actions, _, _, _, _ = network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(pos.astype(int)))
+    #             manual_actions = [4 for _ in range(num_agents)]
+    #             ml_planned_actions, _, _, _, _ = network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
+    #                                                 torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
+    #                                                 torch.as_tensor(pos.astype(int)))
                 
-                fixed_agents = []
-                for super_agent in sorted_leader_agents:
-                    for relayed_action in push_recursive(observation, obs_agents, super_agent, fixed_agents):
-                        manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
-                        fixed_agents.append(relayed_action[0])
+    #             fixed_agents = []
+    #             for super_agent in sorted_leader_agents:
+    #                 for relayed_action in push_recursive(observation, obs_agents, super_agent, fixed_agents):
+    #                     manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
+    #                     fixed_agents.append(relayed_action[0])
 
-                random.shuffle(radiation_agents)
-                for set_of_agents in radiation_agents:
-                    x_values = []
-                    y_values = []
-                    random.shuffle(set_of_agents)
-                    for agent_idx in set_of_agents:
-                        x_values.append(observation[2][agent_idx][0])
-                        y_values.append(observation[2][agent_idx][1])
-                    if len(x_values) == 0 or len(y_values) == 0:
-                        continue
-                    avg_x = sum(x_values) / len(x_values)
-                    avg_y = sum(y_values) / len(y_values)
-                    average_position = (avg_x, avg_y)
+    #             random.shuffle(radiation_agents)
+    #             for set_of_agents in radiation_agents:
+    #                 x_values = []
+    #                 y_values = []
+    #                 random.shuffle(set_of_agents)
+    #                 for agent_idx in set_of_agents:
+    #                     x_values.append(observation[2][agent_idx][0])
+    #                     y_values.append(observation[2][agent_idx][1])
+    #                 if len(x_values) == 0 or len(y_values) == 0:
+    #                     continue
+    #                 avg_x = sum(x_values) / len(x_values)
+    #                 avg_y = sum(y_values) / len(y_values)
+    #                 average_position = (avg_x, avg_y)
 
-                    for radiation_agent in set_of_agents:
-                        for relayed_action in push_recursive_radiation(observation, obs_agents, average_position, radiation_agent, fixed_agents):
-                            manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
-                            fixed_agents.append(relayed_action[0])
+    #                 for radiation_agent in set_of_agents:
+    #                     for relayed_action in push_recursive_radiation(observation, obs_agents, average_position, radiation_agent, fixed_agents):
+    #                         manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
+    #                         fixed_agents.append(relayed_action[0])
                 
-                for no_deadlock_agent in sorted_no_deadlock_agents:
-                    for relayed_action in push_recursive_not_deadlock(observation, obs_agents, no_deadlock_agent, reverse_directiondict[ml_planned_actions[no_deadlock_agent]], fixed_agents):
-                        manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
-                        fixed_agents.append(relayed_action[0])
+    #             for no_deadlock_agent in sorted_no_deadlock_agents:
+    #                 for relayed_action in push_recursive_not_deadlock(observation, obs_agents, no_deadlock_agent, reverse_directiondict[ml_planned_actions[no_deadlock_agent]], fixed_agents):
+    #                     manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
+    #                     fixed_agents.append(relayed_action[0])
                         
-                (obs, last_act, pos), _, done, _ = env.step(manual_actions)
-                # env.save_frame(step, instance_id)
-                step += 1
-                num_comm += np.sum(comm_mask)
-
-    print(f"One instance completed")
+    #             (obs, last_act, pos), _, done, _ = env.step(manual_actions)
+    #             # env.save_frame(step, instance_id)
+    #             step += 1
+    #             num_comm += np.sum(comm_mask)
 
     return np.array_equal(env.agents_pos, env.goals_pos), step, num_comm
 
@@ -704,13 +699,6 @@ def test_one_case(args):
 
 if __name__ == '__main__':
 
-    overall_start_time = time.time()
-
     # load trained model and reproduce results in paper
     test_model(128000)
-
-    overall_end_time = time.time()
-    overall_elapsed_time = overall_end_time - overall_start_time
-
-    print(f"Total experiment time: {overall_elapsed_time:.2f} seconds")
 
