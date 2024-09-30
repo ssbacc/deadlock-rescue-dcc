@@ -4,7 +4,7 @@ import copy
 
 # config
 import yaml
-config = yaml.safe_load(open('C:\\Users\\Owner\\SACHA\\benchmarks\\config.yaml', 'r'))
+config = yaml.safe_load(open('C:\\Users\\Owner\\deadlock-rescue-dcc\\benchmarks\\config.yaml', 'r'))
 OBSTACLE, FREE_SPACE = config['grid_map']['OBSTACLE'], config['grid_map']['FREE_SPACE']
 
 
