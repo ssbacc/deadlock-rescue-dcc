@@ -26,7 +26,7 @@ batch_size = 128
 learning_starts = 50000
 target_network_update_freq = 1750
 save_path='./saved_models'
-max_episode_length = 256
+max_episode_length = 512
 buffer_capacity = 262144
 chunk_capacity = 64
 burn_in_steps = 20
@@ -89,9 +89,9 @@ num_test_cases = 200
 #                     ('warehouse', 64)
 #                     ]
 
-# test_env_settings = [
-#                     ('warehouse', 64)
-#                     ]
+test_env_settings = [
+                    ('warehouse', 64)
+                    ]
 
 # test_env_settings = [
 #                     ('random32-d', 64),
@@ -117,6 +117,6 @@ num_test_cases = 200
 #                     ('Boston', 4)
 #                     ]
 
-test_env_settings = [
-                    ('random32-d', 64)
-                    ]
+# test_env_settings = [
+#                     ('random32-d', 64)
+#                     ]
