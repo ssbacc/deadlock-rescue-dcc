@@ -26,7 +26,7 @@ def create_test(test_env_settings: Tuple = config.test_env_settings, num_test_ca
 
     for map_length, num_agents, density in test_env_settings:
 
-        name = f'./test_set/{map_length}length_{num_agents}agents_{density}density.pth'
+        name = f'./test_set_100/{map_length}length_{num_agents}agents_{density}density.pth'
         print(f'-----{map_length}length {num_agents}agents {density}density-----')
 
         tests = []
@@ -66,24 +66,24 @@ def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings
 
         for case in test_set:
             print(f"test set: {case[0]} env {case[1]} agents")
-            with open('./test_set/{}_{}agents.pth'.format(case[0], case[1]), 'rb') as f:
+            with open('./test_set_100/{}_{}agents.pth'.format(case[0], case[1]), 'rb') as f:
                 tests = pickle.load(f)
 
-            test = tests[0]
-            ret = test_one_case((test, network, instance_id))
+            # test = tests[0]
+            # ret = test_one_case((test, network, instance_id))
 
-            success, steps, num_comm = ret
+            # success, steps, num_comm = ret
 
-            # instance_id_base = instance_id
-            # tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
-            # ret = pool.map(test_one_case, tests)
+            instance_id_base = instance_id
+            tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
+            ret = pool.map(test_one_case, tests)
 
-            # success, steps, num_comm = zip(*ret)
+            success, steps, num_comm = zip(*ret)
 
-            # print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
-            # print("average step: {}".format(sum(steps)/len(steps)))
-            # print("communication times: {}".format(sum(num_comm)/len(num_comm)))
-            # print()
+            print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
+            print("average step: {}".format(sum(steps)/len(steps)))
+            print("communication times: {}".format(sum(num_comm)/len(num_comm)))
+            print()
 
             instance_id += len(tests)
 
@@ -102,24 +102,24 @@ def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings
 
             for case in test_set:
                 print(f"test set: {case[0]} length {case[1]} agents {case[2]} density")
-                with open(f'./test_set/{case[0]}length_{case[1]}agents_{case[2]}density.pth', 'rb') as f:
+                with open(f'./test_set_100/{case[0]}length_{case[1]}agents_{case[2]}density.pth', 'rb') as f:
                     tests = pickle.load(f)
 
-                test = tests[0]
-                ret = test_one_case((test, network, instance_id))
+                # test = tests[0]
+                # ret = test_one_case((test, network, instance_id))
 
-                success, steps, num_comm = ret
+                # success, steps, num_comm = ret
 
-                # instance_id_base = instance_id
-                # tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
-                # ret = pool.map(test_one_case, tests)
+                instance_id_base = instance_id
+                tests = [(test, network, instance_id_base + i) for i, test in enumerate(tests)]
+                ret = pool.map(test_one_case, tests)
 
-                # success, steps, num_comm = zip(*ret)
+                success, steps, num_comm = zip(*ret)
 
-                # print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
-                # print("average step: {}".format(sum(steps)/len(steps)))
-                # print("communication times: {}".format(sum(num_comm)/len(num_comm)))
-                # print()
+                print("success rate: {:.2f}%".format(sum(success)/len(success)*100))
+                print("average step: {}".format(sum(steps)/len(steps)))
+                print("communication times: {}".format(sum(num_comm)/len(num_comm)))
+                print()
 
                 instance_id += 1
 

@@ -17,7 +17,7 @@ import json
 
 detection_interval = 32
 resolution_interval = 16
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = ""
 client = OpenAI()
 
 # 함수들

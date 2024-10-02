@@ -85,24 +85,22 @@ num_test_cases = 200
 #                     ('warehouse', 4),
 #                     ('warehouse', 8),
 #                     ('warehouse', 16),
-#                     ('warehouse', 32),
+#                     ('warehouse', 32)
 #                     ('warehouse', 64)
 #                     ]
 
 test_env_settings = [
-                    ('warehouse', 64)
+                    ('warehouse', 16)
                     ]
 
 # test_env_settings = [
 #                     ('random32-d', 64),
-#                     ('random64-d', 64),
-#                     ('warehouse-w', 64),
+#                     ('random64-d', 64)
+#                     ]
+
+# test_env_settings = [
 #                     ('maze-n', 64),
-#                     ('maze-w', 64),
-#                     ('gallowstemplar', 64),
-#                     ('Berlin', 64),
-#                     ('Paris', 64),
-#                     ('Boston', 64)
+#                     ('maze-w', 64)
 #                     ]
 
 # test_env_settings = [

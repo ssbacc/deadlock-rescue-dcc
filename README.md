@@ -1,2 +1,2 @@
-# DCC
-Original code and trained model for paper ['Learning Selective Communication for Multi-Agent Path Finding'](https://arxiv.org/abs/2109.05413).
+# learned MAPF model deadlock rescue framework using LLM
+based on DCC (https://github.com/ZiyuanMa/DCC)

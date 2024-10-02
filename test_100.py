@@ -12,12 +12,15 @@ from environment import Environment
 from model import Network
 import config
 import copy
-import ollama
 from openai import OpenAI
 import json
+import time
 
-os.environ["OPENAI_API_KEY"] = "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"
+detection_interval = 4
+resolution_interval = 4
+os.environ["OPENAI_API_KEY"] = ""
 client = OpenAI()
+
 
 # 함수들
 directiondict = {
@@ -339,7 +342,7 @@ def push_recursive_not_deadlock(obs, obs_agents, agent_idx, agent_action, agents
     return relayed_actions
 
 
-def get_sorted_agents(agent_groups, env):
+def get_sorted_agents_super(agent_groups, env):
     super_agents = []
     for set_of_agents in agent_groups:
         if not set_of_agents:
@@ -361,49 +364,79 @@ def get_sorted_agents(agent_groups, env):
     return sorted_agent_groups
 
 
+def get_sorted_agents_no_deadlock(agent_groups, env):
+    # 각 에이전트와 목표 사이의 거리 계산
+    agent_distances = [(agent, np.sum(np.abs(env.agents_pos[agent] - env.goals_pos[agent]))) for agent in agent_groups]
+
+    # 거리를 기준으로 내림차순 정렬
+    sorted_agents = sorted(agent_distances, key=lambda x: x[1], reverse=True)
+
+    # 정렬된 에이전트 ID 추출
+    sorted_agent_groups = [agent for agent, distance in sorted_agents]
+    return sorted_agent_groups
+
+
 # 프롬프트
 class gpt4pathfinding:
     def detection(self, agents_state):
         response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are the manager called in to detect whether agents are deadlocked in a MAPF problem. You have the ability to infer what state each agent is in from their behavior."},
+            {"role": "system", "content": "You are the manager responsible for detecting whether agents are deadlocked in a MAPF problem. You can infer each agent's state based on their behavior."},
             {"role": "user", "content":
                 f"""
-                You have 32 action logs of agents to detect whether they are deadlocked.
-                You group the deadlocked agents that are likely to be related to each other.
+                You are given {detection_interval} action logs of agents to detect deadlocks.
                 
-                The following conditions are categorized as deadlocks:
-                - No further movement while in the "Not arrived" state.
-                - Wandering around with no meaningful change in coordinates after 32 behaviors while in the "Not arrived" state.
+                Follow these steps in order:
 
-                The following conditions are NOT categorized as deadlocks:
-                - Being in the "Not arrived" state but transitioning to the "Arrived" state at a certain point and remaining stationary afterward.
-                - Remaining in the "Not arrived" state but showing consistent changes in coordinates while moving.
+                1. **Classify deadlocks**:
+                    - Detect agents that are exhibiting deadlock conditions.
+                    - Deadlock conditions:
+                        - No movement: The agent's coordinates remain the same for all {detection_interval} logs in the "Not arrived" state.
+                        - Wandering: The agent repeatedly visits the same coordinates during {detection_interval} logs in the "Not arrived" state.
+                    - Not deadlocks:
+                        - Always "Arrived": The agent remains in the "Arrived" state throughout.
+                        - Arrived and stationary: Transitioned from "Not arrived" to "Arrived" and has stopped moving.
+                        - Consistent movement: Still "Not arrived" but shows regular coordinate changes without revisiting the same location.
 
-                If deadlocked agents are within a distance of approximately 5 units from each other in coordinates, they are likely to be entangled, so group them together.
+                2. **Group deadlocked agents**:
+                    - Group deadlocked agents that are within a 2-Manhattan distance of each other. 2-Manhattan distance means that the sum of the absolute differences between the x-coordinates and y-coordinates of two agents is 2 or less.
+                    - If a deadlocked agent is within a 2-Manhattan distance of another agent that has already arrived, include them in the same group, as these agents can still cause or experience deadlocks.
 
-                Below are 32 action logs of agents.
+                3. **Provide solutions**:
+                    - Use the "leader" method for independently deadlocked agents or if any agent in the group has a goal more than 8 units away in Manhattan distance.
+                    - Use the "radiation" method if all agents in the group are close to their goals (less than 8 units), are deadlocked due to nearby agents, and are likely to experience repeated deadlocks.
+                    - If a deadlocked agent is near an arrived agent, check their goals and apply the "radiation" method if needed, as this can cause performance issues.
+
+                Rules:
+                - Return "[]" if no deadlocks are found.
+                - Ensure no duplicate agents.
+                - Penalties apply for trivial or non-deadlock cases.
+                
+                Below are the {detection_interval} action logs of agents.
 
                 {agents_state}
 
-                Under no circumstances generate a description or explanation; only return the result in JSON format exactly as shown below.
+                Do not generate a description or explanation.
 
-                Return the status of each agent in JSON format. The status of each agent should follow this format:
+                Provide the agent group status in this JSON format:
                 {{
                     "agent_id": [Agent IDs in the same group],
-                    "deadlock": "yes" or "no"
+                    "solution": "leader" or "radiation"
                 }}
 
-                There shouldn't be any duplicate agents in the results.
-                
-                EXAMPLE:
+                EXAMPLE 1:
                 [
-                    {{"agent_id": [1, 24, 32], "deadlock": "yes"}},
-                    {{"agent_id": [30], "deadlock": "yes"}},
-                    {{"agent_id": [4, 5], "deadlock": "yes"}},
-                    {{"agent_id": [16], "deadlock": "no"}},
-                    {{"agent_id": [20], "deadlock": "no"}}
+                    {{"agent_id": [1, 24], "solution": "leader"}},
+                    {{"agent_id": [4, 5], "solution": "radiation"}}
+                ]
+
+                EXAMPLE 2:
+                []
+
+                EXAMPLE 3:
+                [
+                    {{"agent_id": [8], "solution": "leader"}}
                 ]
 
                 AGAIN, DO NOT GENERATE A DESCRIPTION OR EXPLANATION.
@@ -415,13 +448,11 @@ class gpt4pathfinding:
 pathfinder = gpt4pathfinding()
 
 
-
 torch.manual_seed(config.test_seed)
 np.random.seed(config.test_seed)
 random.seed(config.test_seed)
 DEVICE = torch.device('cpu')
 torch.set_num_threads(1)
-
 
 
 def create_test(test_env_settings: Tuple = config.test_env_settings, num_test_cases: int = config.num_test_cases):
@@ -431,7 +462,7 @@ def create_test(test_env_settings: Tuple = config.test_env_settings, num_test_ca
 
     for map_length, num_agents, density in test_env_settings:
 
-        name = f'./test_set/{map_length}length_{num_agents}agents_{density}density.pth'
+        name = f'./test_set_100/{map_length}length_{num_agents}agents_{density}density.pth'
         print(f'-----{map_length}length {num_agents}agents {density}density-----')
 
         tests = []
@@ -447,7 +478,6 @@ def create_test(test_env_settings: Tuple = config.test_env_settings, num_test_ca
             pickle.dump(tests, f)
 
 
-
 def code_test():
     env = Environment()
     network = Network()
@@ -456,7 +486,7 @@ def code_test():
     network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(pos.astype(int)))
-
+    
 
 def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings):
     '''
@@ -481,7 +511,7 @@ def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings
 
         for case in test_set:
             print(f"test set: {case[0]} env {case[1]} agents")
-            with open('./test_set/{}_{}agents.pth'.format(case[0], case[1]), 'rb') as f:
+            with open('./test_set_100/{}_{}agents.pth'.format(case[0], case[1]), 'rb') as f:
                 tests = pickle.load(f)
 
             # test = tests[0]
@@ -517,7 +547,7 @@ def test_model(model_range: Union[int, tuple], test_set=config.test_env_settings
 
             for case in test_set:
                 print(f"test set: {case[0]} length {case[1]} agents {case[2]} density")
-                with open(f'./test_set/{case[0]}length_{case[1]}agents_{case[2]}density.pth', 'rb') as f:
+                with open(f'./test_set_100/{case[0]}length_{case[1]}agents_{case[2]}density.pth', 'rb') as f:
                     tests = pickle.load(f)
 
                 # test = tests[0]
@@ -557,22 +587,14 @@ def test_one_case(args):
     step = 0
     num_comm = 0
 
-    while not done and env.steps < config.max_episode_length // 2:
-        actions, _, _, _, comm_mask = network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
-                                                    torch.as_tensor(pos.astype(int)))
-        (obs, last_act, pos), _, done, _ = env.step(actions)
-        # env.save_frame(step, instance_id)
-        step += 1
-        num_comm += np.sum(comm_mask)
-
     while not done and env.steps < config.max_episode_length:
         env_copy = copy.deepcopy(env)
         plan = []
         not_arrived = set()
         sim_obs, sim_last_act, sim_pos = env_copy.observe()
-        for _ in range(32):
-            if env_copy.steps >= config.max_episode_length:
+        sim_done = False
+        for _ in range(detection_interval):
+            if env_copy.steps >= config.max_episode_length or sim_done:
                 break
             actions, _, _, _, comm_mask = network.step(torch.as_tensor(sim_obs.astype(np.float32)).to(DEVICE), 
                                                         torch.as_tensor(sim_last_act.astype(np.float32)).to(DEVICE), 
@@ -582,11 +604,20 @@ def test_one_case(args):
             for i in range(num_agents):
                 if not np.array_equal(env_copy.agents_pos[i], env_copy.goals_pos[i]):
                     not_arrived.add(i)
-        planned_steps_dict = {i: [] for i in not_arrived}
-        goal_logged = {i: False for i in not_arrived}
+        not_arrived = list(not_arrived)
+
+        observations = env.observe_agents()
+        FOV_agents = [
+            [*(observations[i][observations[i] != 0] - 1).tolist(), i] if np.any(observations[i]) else [i]
+            for i in not_arrived
+        ]
+        agents_to_prompt = list({agent for agent_list in FOV_agents for agent in agent_list})
+
+        planned_steps_dict = {i: [] for i in agents_to_prompt}
+        goal_logged = {i: False for i in agents_to_prompt}
         for i in plan:
             actions, _, positions = i
-            for agent_idx in not_arrived:
+            for agent_idx in agents_to_prompt:
                 position = positions[agent_idx]
                 # 목표 위치와 현재 위치를 비교하여 도달 여부 판단
                 arrived_status = "Arrived" if np.array_equal(position, env.goals_pos[agent_idx]) else "Not arrived"
@@ -617,27 +648,43 @@ def test_one_case(args):
             # print("JSON 부분을 찾을 수 없으므로 deadlock이 없다고 가정합니다.")
             json_data = []
 
-        deadlock_exists = any(item.get('deadlock') == 'yes' for item in json_data)
+        deadlock_exists = len(json_data) > 0
         
         if not deadlock_exists:
             for actions, comm_mask, _ in plan:
-                if env.steps >= config.max_episode_length:
+                if env.steps >= config.max_episode_length or done:
                     break
                 (obs, last_act, pos), _, done, _ = env.step(actions)
                 # env.save_frame(step, instance_id)
                 step += 1
                 num_comm += np.sum(comm_mask)
         else:
-            radiation_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'yes']
-            no_deadlock_agents = [item['agent_id'] for item in json_data if item.get('deadlock') == 'no']
+            leader_agents = []
+            radiation_agents = []
 
-            sorted_no_deadlock_agents = get_sorted_agents(no_deadlock_agents, env)
+            if isinstance(json_data, list):
+                for item in json_data:
+                    if isinstance(item, dict):
+                        if item.get('solution') == 'leader':
+                            leader_agents.append(item['agent_id'])
+                        elif item.get('solution') == 'radiation':
+                            radiation_agents.append(item['agent_id'])
 
-            sorted_no_deadlock_agents = [agent for agent in sorted_no_deadlock_agents if 0 <= agent < num_agents]
-            radiation_agents = [[agent for agent in sublist if 0 <= agent < num_agents] for sublist in radiation_agents]
+            leader_agents = [[agent for agent in group if agent < num_agents] for group in leader_agents]
+            radiation_agents = [[agent for agent in group if agent < num_agents] for group in radiation_agents]
 
-            for _ in range(16):
-                if env.steps >= config.max_episode_length:
+            deadlocked_agents = set()
+            for group in leader_agents + radiation_agents:
+                deadlocked_agents.update(group)
+
+            all_agents = set(range(num_agents))
+            no_deadlock_agents = list(all_agents - deadlocked_agents)
+
+            sorted_leader_agents = get_sorted_agents_super(leader_agents, env)
+            sorted_no_deadlock_agents = get_sorted_agents_no_deadlock(no_deadlock_agents, env)
+
+            for _ in range(resolution_interval):
+                if env.steps >= config.max_episode_length or done:
                     break
                 obs_agents = env.observe_agents()
                 observation = env.observe()
@@ -648,6 +695,12 @@ def test_one_case(args):
                                                     torch.as_tensor(pos.astype(int)))
                 
                 fixed_agents = []
+                for super_agent in sorted_leader_agents:
+                    if super_agent in fixed_agents:
+                        continue
+                    for relayed_action in push_recursive(observation, obs_agents, super_agent, fixed_agents):
+                        manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
+                        fixed_agents.append(relayed_action[0])
 
                 random.shuffle(radiation_agents)
                 for set_of_agents in radiation_agents:
@@ -664,11 +717,15 @@ def test_one_case(args):
                     average_position = (avg_x, avg_y)
 
                     for radiation_agent in set_of_agents:
+                        if radiation_agent in fixed_agents:
+                            continue
                         for relayed_action in push_recursive_radiation(observation, obs_agents, average_position, radiation_agent, fixed_agents):
                             manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
                             fixed_agents.append(relayed_action[0])
                 
                 for no_deadlock_agent in sorted_no_deadlock_agents:
+                    if no_deadlock_agent in fixed_agents:
+                        continue
                     for relayed_action in push_recursive_not_deadlock(observation, obs_agents, no_deadlock_agent, reverse_directiondict[ml_planned_actions[no_deadlock_agent]], fixed_agents):
                         manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
                         fixed_agents.append(relayed_action[0])
@@ -681,9 +738,9 @@ def test_one_case(args):
     return np.array_equal(env.agents_pos, env.goals_pos), step, num_comm
 
 
-
 if __name__ == '__main__':
-
-    # load trained model and reproduce results in paper
+    start_time = time.time()
     test_model(128000)
-
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f"Total execution time: {total_time:.2f} seconds")
