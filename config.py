@@ -82,15 +82,14 @@ num_test_cases = 200
 #                     ]
 
 # test_env_settings = [
-#                     ('warehouse', 4),
 #                     ('warehouse', 8),
 #                     ('warehouse', 16),
-#                     ('warehouse', 32)
+#                     ('warehouse', 32),
 #                     ('warehouse', 64)
 #                     ]
 
 test_env_settings = [
-                    ('warehouse', 16)
+                    ('warehouse', 64)
                     ]
 
 # test_env_settings = [
