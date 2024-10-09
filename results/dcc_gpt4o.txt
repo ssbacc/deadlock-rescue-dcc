@@ -1,101 +1,81 @@
-hyperparameter: 4, 16
+detection = 4, resolution = 16
 
 test set: random32 env 4 agents
 success rate: 100.00%
-average step: 35.17
-communication times: 2.55
+average step: 33.19
 
 test set: random32 env 8 agents
 success rate: 100.00%
-average step: 45.09
-communication times: 10.17
+average step: 38.39
 
 test set: random32 env 16 agents
 success rate: 100.00%
-average step: 52.04
-communication times: 36.61
+average step: 45.64
 
 test set: random32 env 32 agents
-success rate: 100.00%
-average step: 64.03
-communication times: 165.79
+success rate: 99.00%
+average step: 57.22
 
 test set: random32 env 64 agents
 success rate: 100.00%
-average step: 73.23
-communication times: 820.21
+average step: 77.33
 
 test set: random64 env 4 agents
-success rate: 100.00%
-average step: 70.61
-communication times: 1.44
+success rate: 99.00%
+average step: 70.21
 
 test set: random64 env 8 agents
 success rate: 100.00%
-average step: 82.23
-communication times: 5.79
+average step: 78.75
 
 test set: random64 env 16 agents
 success rate: 100.00%
-average step: 91.22
-communication times: 20.21
+average step: 87.28
 
 test set: random64 env 32 agents
-success rate: 100.00%
-average step: 104.02
-communication times: 93.23
+success rate: 98.00%
+average step: 104.56
 
 test set: random64 env 64 agents
-success rate: 100.00%
-average step: 121.83
-communication times: 343.82
+success rate: 99.00%
+average step: 126.27
 
 test set: den312d env 4 agents
 success rate: 100.00%
-average step: 87.41
-communication times: 3.64
+average step: 83.72
 
 test set: den312d env 8 agents
 success rate: 100.00%
-average step: 103.7
-communication times: 15.13
+average step: 96.74
 
 test set: den312d env 16 agents
 success rate: 100.00%
-average step: 119.44
-communication times: 61.46
+average step: 109.27
 
 test set: den312d env 32 agents
 success rate: 99.00%
-average step: 143.86
-communication times: 254.16
+average step: 124.6
 
 test set: den312d env 64 agents
 success rate: 100.00%
-average step: 162.89
-communication times: 1339.14
+average step: 145.83
 
 test set: warehouse env 4 agents
 success rate: 100.00%
-average step: 134.48
-communication times: 1.4
+average step: 131.51
 
 test set: warehouse env 8 agents
 success rate: 99.00%
-average step: 165.92
-communication times: 9.17
+average step: 160.28
 
 test set: warehouse env 16 agents
-success rate: 97.00%
-average step: 191.9
-communication times: 41.66
+success rate: 96.00%
+average step: 188.84
 
 test set: warehouse env 32 agents
-success rate: 90.00%
-average step: 245.7
-communication times: 167.67
+success rate: 86.00%
+average step: 247.48
 
 test set: warehouse env 64 agents
-success rate: 74.00%
-average step: 326.35
-communication times: 699.48
+success rate: 76.00%
+average step: 326.51
