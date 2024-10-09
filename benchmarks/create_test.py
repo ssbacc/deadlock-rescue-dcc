@@ -25,6 +25,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_instances", default=300, type=int)
+    parser.add_argument("--num_instances", default=10, type=int)
     args = parser.parse_args()
     main(args)
