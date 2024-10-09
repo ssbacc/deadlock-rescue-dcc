@@ -1,79 +1,79 @@
 test set: random32 env 4 agents
 success rate: 100.00%
-average step: 33.2
+average step: 34.21
 
 test set: random32 env 8 agents
 success rate: 100.00%
-average step: 38.63
+average step: 39.28
 
 test set: random32 env 16 agents
 success rate: 100.00%
-average step: 44.35
+average step: 47.81
 
 test set: random32 env 32 agents
 success rate: 100.00%
-average step: 51.74
+average step: 58.84
 
 test set: random32 env 64 agents
-success rate: 90.00%
-average step: 95.67
+success rate: 100.00%
+average step: 77.83
 
 test set: random64 env 4 agents
-success rate: 99.00%
-average step: 69.77
+success rate: 100.00%
+average step: 67.22
 
 test set: random64 env 8 agents
-success rate: 97.00%
-average step: 83.02
+success rate: 100.00%
+average step: 75.18
 
 test set: random64 env 16 agents
-success rate: 95.00%
-average step: 92.64
+success rate: 100.00%
+average step: 82.5
 
 test set: random64 env 32 agents
-success rate: 88.00%
-average step: 116.69
+success rate: 100.00%
+average step: 92.32
 
 test set: random64 env 64 agents
-success rate: 77.00%
-average step: 147.31
+success rate: 100.00%
+average step: 106.18
 
 test set: den312d env 4 agents
-success rate: 99.00%
-average step: 85.41
+success rate: 100.00%
+average step: 84.53
 
 test set: den312d env 8 agents
-success rate: 99.00%
-average step: 97.78
+success rate: 100.00%
+average step: 98.67
 
 test set: den312d env 16 agents
-success rate: 99.00%
-average step: 106.95
+success rate: 100.00%
+average step: 115.11
 
 test set: den312d env 32 agents
-success rate: 94.00%
-average step: 124.0
+success rate: 99.00%
+average step: 139.65
 
 test set: den312d env 64 agents
-success rate: 90.00%
-average step: 149.1
+success rate: 100.00%
+average step: 174.65
 
 test set: warehouse env 4 agents
 success rate: 100.00%
-average step: 131.16
+average step: 133.5
 
 test set: warehouse env 8 agents
-success rate: 93.00%
-average step: 179.68
+success rate: 98.00%
+average step: 169.37
 
 test set: warehouse env 16 agents
-success rate: 89.00%
-average step: 212.92
+success rate: 95.00%
+average step: 222.52
 
 test set: warehouse env 32 agents
-success rate: 61.00%
-average step: 321.81
+success rate: 76.00%
+average step: 348.44
 
 test set: warehouse env 64 agents
-success rate: 16.00%
-average step: 468.48
+success rate: 30.00%
+average step: 472.97

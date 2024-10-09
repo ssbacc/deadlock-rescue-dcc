@@ -14,7 +14,6 @@ import config
 import copy
 from openai import OpenAI
 import json
-import time
 
 detection_interval = 4
 resolution_interval = 16
@@ -28,7 +27,7 @@ directiondict = {
 }
 reverse_directiondict = {v: k for k, v in directiondict.items()}
 
-def get_possible_directions(obs, obs_agents, agent_idx, agents_not_exchangeable, agents_fixed):
+def get_possible_directions(obs, obs_agents, agents_pos, agent_idx, agents_not_exchangeable, forbidden_positions):
     directions = []
     directions_pushed_agents = []
     if obs[0][agent_idx][1][3, 4] == 0:
@@ -41,25 +40,25 @@ def get_possible_directions(obs, obs_agents, agent_idx, agents_not_exchangeable,
         directions.append('east')
 
     direction_conditions = [
-        ('north', obs_agents[agent_idx][3, 4] - 1),
-        ('south', obs_agents[agent_idx][5, 4] - 1),
-        ('west', obs_agents[agent_idx][4, 3] - 1),
-        ('east', obs_agents[agent_idx][4, 5] - 1)
+        ('north', obs_agents[agent_idx][3, 4] - 1, [agents_pos[agent_idx][0]-1, agents_pos[agent_idx][1]]),
+        ('south', obs_agents[agent_idx][5, 4] - 1, [agents_pos[agent_idx][0]+1, agents_pos[agent_idx][1]]),
+        ('west', obs_agents[agent_idx][4, 3] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]-1]),
+        ('east', obs_agents[agent_idx][4, 5] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]+1])
     ]
 
-    for direction, agent_value in direction_conditions:
-        if agent_value in agents_not_exchangeable or agent_value in agents_fixed:
+    for direction, agent_value, coordinate in direction_conditions:
+        if agent_value in agents_not_exchangeable or coordinate in [pos.tolist() if isinstance(pos, np.ndarray) else pos for pos in forbidden_positions]:
             if direction in directions:
                 directions.remove(direction)
 
-    for direction, agent_value in direction_conditions:
+    for direction, agent_value, coordinate in direction_conditions:
         if direction in directions:
             directions_pushed_agents.append((direction, None if agent_value == -1 else agent_value))
 
     return directions_pushed_agents
 
 
-def get_possible_directions_super(obs, obs_agents, agent_idx, agents_fixed):
+def get_possible_directions_super(obs, obs_agents, agents_pos, agent_idx, forbidden_positions):
     directions = []
     directions_pushed_agents = []
     if obs[0][agent_idx][2][4, 4] == 1:
@@ -72,25 +71,25 @@ def get_possible_directions_super(obs, obs_agents, agent_idx, agents_fixed):
         directions.append('east')
 
     direction_conditions = [
-        ('north', obs_agents[agent_idx][3, 4] - 1),
-        ('south', obs_agents[agent_idx][5, 4] - 1),
-        ('west', obs_agents[agent_idx][4, 3] - 1),
-        ('east', obs_agents[agent_idx][4, 5] - 1)
+        ('north', obs_agents[agent_idx][3, 4] - 1, [agents_pos[agent_idx][0]-1, agents_pos[agent_idx][1]]),
+        ('south', obs_agents[agent_idx][5, 4] - 1, [agents_pos[agent_idx][0]+1, agents_pos[agent_idx][1]]),
+        ('west', obs_agents[agent_idx][4, 3] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]-1]),
+        ('east', obs_agents[agent_idx][4, 5] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]+1])
     ]
 
-    for direction, agent_value in direction_conditions:
-        if agent_value in agents_fixed:
+    for direction, agent_value, coordinate in direction_conditions:
+        if coordinate in [pos.tolist() if isinstance(pos, np.ndarray) else pos for pos in forbidden_positions]:
             if direction in directions:
                 directions.remove(direction)
 
-    for direction, agent_value in direction_conditions:
+    for direction, agent_value, coordinate in direction_conditions:
         if direction in directions:
             directions_pushed_agents.append((direction, None if agent_value == -1 else agent_value))
 
     return directions_pushed_agents
 
 
-def push_recursive(obs, obs_agents, agent_super, agents_fixed):
+def push_recursive(obs, obs_agents, agents_pos, agent_super, forbidden_positions):
     relayed_actions = []
     agents_not_exchangeable = []
 
@@ -103,13 +102,13 @@ def push_recursive(obs, obs_agents, agent_super, agents_fixed):
     while True:
         # 가능한 방향들 계산
         if current_agent == agent_super:
-            possible_directions = get_possible_directions_super(obs, obs_agents, current_agent, agents_fixed)
+            possible_directions = get_possible_directions_super(obs, obs_agents, agents_pos, current_agent, forbidden_positions)
         else:
-            possible_directions = get_possible_directions(obs, obs_agents, current_agent, agents_not_exchangeable, agents_fixed)
+            possible_directions = get_possible_directions(obs, obs_agents, agents_pos, current_agent, agents_not_exchangeable, forbidden_positions)
 
         while not possible_directions:
             if not stack:
-                # 백트래킹할 곳이 없으면 종료
+                # 백트래킹할 곳이 없으면 종료'
                 return [(agent_super, 'stay')]
 
             # 스택에서 이전 상태로 백트래킹
@@ -150,7 +149,7 @@ def push_recursive(obs, obs_agents, agent_super, agents_fixed):
     return relayed_actions
 
 
-def get_possible_directions_radiation(obs, obs_agents, center_coordinates, agent_idx, agents_fixed):
+def get_possible_directions_radiation(obs, obs_agents, agents_pos, center_coordinates, agent_idx, forbidden_positions):
     directions = []
     directions_pushed_agents = []
     if obs[0][agent_idx][1][3, 4] == 0:
@@ -179,25 +178,25 @@ def get_possible_directions_radiation(obs, obs_agents, center_coordinates, agent
             directions.remove('east')
 
     direction_conditions = [
-        ('north', obs_agents[agent_idx][3, 4] - 1),
-        ('south', obs_agents[agent_idx][5, 4] - 1),
-        ('west', obs_agents[agent_idx][4, 3] - 1),
-        ('east', obs_agents[agent_idx][4, 5] - 1)
+        ('north', obs_agents[agent_idx][3, 4] - 1, [agents_pos[agent_idx][0]-1, agents_pos[agent_idx][1]]),
+        ('south', obs_agents[agent_idx][5, 4] - 1, [agents_pos[agent_idx][0]+1, agents_pos[agent_idx][1]]),
+        ('west', obs_agents[agent_idx][4, 3] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]-1]),
+        ('east', obs_agents[agent_idx][4, 5] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]+1])
     ]
 
-    for direction, agent_value in direction_conditions:
-        if agent_value in agents_fixed:
+    for direction, agent_value, coordinate in direction_conditions:
+        if coordinate in [pos.tolist() if isinstance(pos, np.ndarray) else pos for pos in forbidden_positions]:
             if direction in directions:
                 directions.remove(direction)
 
-    for direction, agent_value in direction_conditions:
+    for direction, agent_value, coordinate in direction_conditions:
         if direction in directions:
             directions_pushed_agents.append((direction, None if agent_value == -1 else agent_value))
 
     return directions_pushed_agents
 
 
-def push_recursive_radiation(obs, obs_agents, center_coordinates, agent_idx, agents_fixed):
+def push_recursive_radiation(obs, obs_agents, agents_pos, center_coordinates, agent_idx, forbidden_positions):
 
     relayed_actions = []
     agents_not_exchangeable = []
@@ -211,9 +210,9 @@ def push_recursive_radiation(obs, obs_agents, center_coordinates, agent_idx, age
     while True:
         # 가능한 방향들 계산
         if current_agent == agent_idx:
-            possible_directions = get_possible_directions_radiation(obs, obs_agents, center_coordinates, current_agent, agents_fixed)
+            possible_directions = get_possible_directions_radiation(obs, obs_agents, agents_pos, center_coordinates, current_agent, forbidden_positions)
         else:
-            possible_directions = get_possible_directions(obs, obs_agents, current_agent, agents_not_exchangeable, agents_fixed)
+            possible_directions = get_possible_directions(obs, obs_agents, agents_pos, current_agent, agents_not_exchangeable, forbidden_positions)
 
         while not possible_directions:
             if not stack:
@@ -258,30 +257,30 @@ def push_recursive_radiation(obs, obs_agents, center_coordinates, agent_idx, age
     return relayed_actions
 
 
-def get_possible_directions_not_deadlock(obs, obs_agents, agent_idx, agent_action, agents_fixed):
+def get_possible_directions_not_deadlock(obs, obs_agents, agents_pos, agent_idx, agent_action, forbidden_positions):
     directions = [agent_action]
     directions_pushed_agents = []
 
     direction_conditions = [
-        ('north', obs_agents[agent_idx][3, 4] - 1),
-        ('south', obs_agents[agent_idx][5, 4] - 1),
-        ('west', obs_agents[agent_idx][4, 3] - 1),
-        ('east', obs_agents[agent_idx][4, 5] - 1)
+        ('north', obs_agents[agent_idx][3, 4] - 1, [agents_pos[agent_idx][0]-1, agents_pos[agent_idx][1]]),
+        ('south', obs_agents[agent_idx][5, 4] - 1, [agents_pos[agent_idx][0]+1, agents_pos[agent_idx][1]]),
+        ('west', obs_agents[agent_idx][4, 3] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]-1]),
+        ('east', obs_agents[agent_idx][4, 5] - 1, [agents_pos[agent_idx][0], agents_pos[agent_idx][1]+1])
     ]
 
-    for direction, agent_value in direction_conditions:
-        if agent_value in agents_fixed:
+    for direction, agent_value, coordinate in direction_conditions:
+        if coordinate in [pos.tolist() if isinstance(pos, np.ndarray) else pos for pos in forbidden_positions]:
             if direction in directions:
                 directions.remove(direction)
 
-    for direction, agent_value in direction_conditions:
+    for direction, agent_value, coordinate in direction_conditions:
         if direction in directions:
             directions_pushed_agents.append((direction, None if agent_value == -1 else agent_value))
 
     return directions_pushed_agents
 
 
-def push_recursive_not_deadlock(obs, obs_agents, agent_idx, agent_action, agents_fixed):
+def push_recursive_not_deadlock(obs, obs_agents, agents_pos, agent_idx, agent_action, forbidden_positions):
 
     relayed_actions = []
     agents_not_exchangeable = []
@@ -295,9 +294,9 @@ def push_recursive_not_deadlock(obs, obs_agents, agent_idx, agent_action, agents
     while True:
         # 가능한 방향들 계산
         if current_agent == agent_idx:
-            possible_directions = get_possible_directions_not_deadlock(obs, obs_agents, agent_idx, agent_action, agents_fixed)
+            possible_directions = get_possible_directions_not_deadlock(obs, obs_agents, agents_pos, current_agent, agent_action, forbidden_positions)
         else:
-            possible_directions = get_possible_directions(obs, obs_agents, current_agent, agents_not_exchangeable, agents_fixed)
+            possible_directions = get_possible_directions(obs, obs_agents, agents_pos, current_agent, agents_not_exchangeable, forbidden_positions)
 
         while not possible_directions:
             if not stack:
@@ -342,7 +341,7 @@ def push_recursive_not_deadlock(obs, obs_agents, agent_idx, agent_action, agents
     return relayed_actions
 
 
-def get_sorted_agents_super(agent_groups, env):
+def get_randomized_super_agents(agent_groups, env):
     super_agents = []
     for set_of_agents in agent_groups:
         if not set_of_agents:
@@ -353,38 +352,27 @@ def get_sorted_agents_super(agent_groups, env):
     if not super_agents:
         return []
 
-    # 각 에이전트와 목표 사이의 거리 계산
-    agent_distances = [(agent, np.sum(np.abs(env.agents_pos[agent] - env.goals_pos[agent]))) for agent in super_agents]
-
-    # 거리를 기준으로 내림차순 정렬
-    sorted_agents = sorted(agent_distances, key=lambda x: x[1], reverse=True)
-
-    # 정렬된 에이전트 ID 추출
-    sorted_agent_groups = [agent for agent, distance in sorted_agents]
-    return sorted_agent_groups
+    random.shuffle(super_agents)
+    return super_agents
 
 
-def get_sorted_agents_no_deadlock(agent_groups, env):
-    # 각 에이전트와 목표 사이의 거리 계산
-    agent_distances = [(agent, np.sum(np.abs(env.agents_pos[agent] - env.goals_pos[agent]))) for agent in agent_groups]
-
-    # 거리를 기준으로 내림차순 정렬
-    sorted_agents = sorted(agent_distances, key=lambda x: x[1], reverse=True)
-
-    # 정렬된 에이전트 ID 추출
-    sorted_agent_groups = [agent for agent, distance in sorted_agents]
-    return sorted_agent_groups
+def update_agent_position(agents_pos, agent_idx, action):
+    new_position = agents_pos[agent_idx].copy()
+    if action == 'north':
+        new_position[0] -= 1
+    elif action == 'south':
+        new_position[0] += 1
+    elif action == 'west':
+        new_position[1] -= 1
+    elif action == 'east':
+        new_position[1] += 1
+    return new_position
 
 
 # 프롬프트
 class gpt4pathfinding:
     def detection(self, agents_state):
-        response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are the manager responsible for detecting whether agents are deadlocked in a MAPF problem. You can infer each agent's state based on their behavior."},
-            {"role": "user", "content":
-                f"""
+        prompt_text = f"""
                 You are given {detection_interval} action logs of agents to detect deadlocks.
                 
                 Follow these steps in order:
@@ -401,7 +389,7 @@ class gpt4pathfinding:
 
                 2. **Group deadlocked agents**:
                     - Group deadlocked agents that are within a 2-Manhattan distance of each other. 2-Manhattan distance means that the sum of the absolute differences between the x-coordinates and y-coordinates of two agents is 2 or less.
-                    - If a deadlocked agent is within a 2-Manhattan distance of another agent that has already arrived, include them in the same group, as these agents can still cause or experience deadlocks.
+                    - If a deadlocked agent is within a 2-Manhattan distance of **another agent that has already arrived, include them in the same group**, as these agents can still cause or experience deadlocks. **This includes cases where deadlocked agents are near arrived agents.**
 
                 3. **Provide solutions**:
                     - Use the "leader" method for independently deadlocked agents or if any agent in the group has a goal more than 8 units away in Manhattan distance.
@@ -438,10 +426,14 @@ class gpt4pathfinding:
                 [
                     {{"agent_id": [8], "solution": "leader"}}
                 ]
-
-                AGAIN, DO NOT GENERATE A DESCRIPTION OR EXPLANATION.
                 """
-            }],
+        
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are the manager responsible for detecting whether agents are deadlocked in a MAPF problem. You can infer each agent's state based on their behavior."},
+                {"role": "user", "content": prompt_text}
+            ],
         )
         return response.choices[0].message.content
     
@@ -593,7 +585,7 @@ def test_one_case(args):
         not_arrived = set()
         sim_obs, sim_last_act, sim_pos = env_copy.observe()
         sim_done = False
-        for _ in range(detection_interval):
+        for _ in range(resolution_interval):
             if env_copy.steps >= config.max_episode_length or sim_done:
                 break
             actions, _, _, _, comm_mask = network.step(torch.as_tensor(sim_obs.astype(np.float32)).to(DEVICE), 
@@ -612,30 +604,31 @@ def test_one_case(args):
             for i in not_arrived
         ]
         agents_to_prompt = list({agent for agent_list in FOV_agents for agent in agent_list})
+        agents_to_prompt = sorted(agents_to_prompt)
 
         planned_steps_dict = {i: [] for i in agents_to_prompt}
         goal_logged = {i: False for i in agents_to_prompt}
-        for i in plan:
+        for i in plan[:detection_interval]:
             actions, _, positions = i
             for agent_idx in agents_to_prompt:
                 position = positions[agent_idx]
                 # 목표 위치와 현재 위치를 비교하여 도달 여부 판단
                 arrived_status = "Arrived" if np.array_equal(position, env.goals_pos[agent_idx]) else "Not arrived"
-                direction = reverse_directiondict.get(actions[agent_idx], 'unknown')
                 if not goal_logged[agent_idx]:
                     planned_steps_dict[agent_idx].append(
-                        f"(Action: {direction}, Position: [{position[0]}, {position[1]}], {arrived_status})"
+                        f"(Position: [{position[0]}, {position[1]}], {arrived_status})"
                     )
                     goal_logged[agent_idx] = True
                 else:
                     planned_steps_dict[agent_idx].append(
-                        f"(Action: {direction}, Position: [{position[0]}, {position[1]}], {arrived_status})"
+                        f"(Position: [{position[0]}, {position[1]}], {arrived_status})"
                     )
         agents_state = ""
         for agent_idx in planned_steps_dict:
             agent_goal = f" (Goal: [{env.goals_pos[agent_idx][0]}, {env.goals_pos[agent_idx][1]}])"
             agent_log = ", ".join(planned_steps_dict[agent_idx])
             agents_state += f"Agent {agent_idx}{agent_goal}: {agent_log}\n"
+
         gpt4_response = pathfinder.detection(agents_state)
         response_text = gpt4_response
         try:
@@ -669,7 +662,7 @@ def test_one_case(args):
                             leader_agents.append(item['agent_id'])
                         elif item.get('solution') == 'radiation':
                             radiation_agents.append(item['agent_id'])
-
+                            
             leader_agents = [[agent for agent in group if agent < num_agents] for group in leader_agents]
             radiation_agents = [[agent for agent in group if agent < num_agents] for group in radiation_agents]
 
@@ -680,29 +673,36 @@ def test_one_case(args):
             all_agents = set(range(num_agents))
             no_deadlock_agents = list(all_agents - deadlocked_agents)
 
-            sorted_leader_agents = get_sorted_agents_super(leader_agents, env)
-            sorted_no_deadlock_agents = get_sorted_agents_no_deadlock(no_deadlock_agents, env)
+            sorted_leader_agents = get_randomized_super_agents(leader_agents, env)
+            random.shuffle(radiation_agents)
+            random.shuffle(no_deadlock_agents)
 
             for _ in range(resolution_interval):
                 if env.steps >= config.max_episode_length or done:
                     break
                 obs_agents = env.observe_agents()
                 observation = env.observe()
+                agents_pos = env.agents_pos
 
                 manual_actions = [4 for _ in range(num_agents)]
                 ml_planned_actions, _, _, _, _ = network.step(torch.as_tensor(obs.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(last_act.astype(np.float32)).to(DEVICE), 
                                                     torch.as_tensor(pos.astype(int)))
                 
-                fixed_agents = []
-                for super_agent in sorted_leader_agents:
-                    if super_agent in fixed_agents:
-                        continue
-                    for relayed_action in push_recursive(observation, obs_agents, super_agent, fixed_agents):
-                        manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
-                        fixed_agents.append(relayed_action[0])
+                forbidden_positions = []
+                agents_moved = []
 
-                random.shuffle(radiation_agents)
+                for super_agent in sorted_leader_agents:
+                    if super_agent in agents_moved:
+                        continue
+                    for relayed_action in push_recursive(observation, obs_agents, agents_pos, super_agent, forbidden_positions):
+                        agent_idx = relayed_action[0]
+                        action = relayed_action[1]
+                        manual_actions[agent_idx] = directiondict[action]
+                        agents_moved.append(agent_idx)
+                        new_position = update_agent_position(agents_pos, agent_idx, action)
+                        forbidden_positions.append(new_position)
+
                 for set_of_agents in radiation_agents:
                     x_values = []
                     y_values = []
@@ -717,19 +717,27 @@ def test_one_case(args):
                     average_position = (avg_x, avg_y)
 
                     for radiation_agent in set_of_agents:
-                        if radiation_agent in fixed_agents:
+                        if radiation_agent in agents_moved:
                             continue
-                        for relayed_action in push_recursive_radiation(observation, obs_agents, average_position, radiation_agent, fixed_agents):
-                            manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
-                            fixed_agents.append(relayed_action[0])
-                
-                for no_deadlock_agent in sorted_no_deadlock_agents:
-                    if no_deadlock_agent in fixed_agents:
+                        for relayed_action in push_recursive_radiation(observation, obs_agents, agents_pos, average_position, radiation_agent, forbidden_positions):
+                            agent_idx = relayed_action[0]
+                            action = relayed_action[1]
+                            manual_actions[agent_idx] = directiondict[action]
+                            agents_moved.append(agent_idx)
+                            new_position = update_agent_position(agents_pos, agent_idx, action)
+                            forbidden_positions.append(new_position)
+
+                for no_deadlock_agent in no_deadlock_agents:
+                    if no_deadlock_agent in agents_moved:
                         continue
-                    for relayed_action in push_recursive_not_deadlock(observation, obs_agents, no_deadlock_agent, reverse_directiondict[ml_planned_actions[no_deadlock_agent]], fixed_agents):
-                        manual_actions[relayed_action[0]] = directiondict[relayed_action[1]]
-                        fixed_agents.append(relayed_action[0])
-                        
+                    for relayed_action in push_recursive_not_deadlock(observation, obs_agents, agents_pos, no_deadlock_agent, reverse_directiondict[ml_planned_actions[no_deadlock_agent]], forbidden_positions):
+                        agent_idx = relayed_action[0]
+                        action = relayed_action[1]
+                        manual_actions[agent_idx] = directiondict[action]
+                        agents_moved.append(agent_idx)
+                        new_position = update_agent_position(agents_pos, agent_idx, action)
+                        forbidden_positions.append(new_position)
+      
                 (obs, last_act, pos), _, done, _ = env.step(manual_actions)
                 # env.save_frame(step, instance_id)
                 step += 1
@@ -739,8 +747,4 @@ def test_one_case(args):
 
 
 if __name__ == '__main__':
-    start_time = time.time()
     test_model(128000)
-    end_time = time.time()
-    total_time = end_time - start_time
-    print(f"Total execution time: {total_time:.2f} seconds")
